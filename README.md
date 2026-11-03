@@ -1,0 +1,95 @@
+# Hematology LMS
+
+ระบบฝึกทำข้อสอบโลหิตวิทยาแบบ full-stack สำหรับโรงเรียนแพทย์ — React + Netlify Functions + Netlify Database (Postgres)
+
+ผู้ใช้ 4 กลุ่ม บัญชีเดียวมีได้หลายบทบาท (สลับได้จากแถบด้านบน):
+
+| บทบาท | ทำอะไรได้ |
+|---|---|
+| **ผู้เรียน** (นศพ. / แพทย์ประจำบ้าน) | ฝึกข้อสอบแบบปรับตามจุดอ่อนหรือเลือก Topic, ดูเฉลยและเหตุผลทุกตัวเลือกหลังตอบ, ทบทวนข้อที่ผิด, ดู mastery ราย Topic/subtopic, อ่านข้อเสนอแนะจากอาจารย์, รายงานปัญหาโจทย์ (ไม่ระบุตัวตน), เข้าร่วมตารางอันดับในรุ่นแบบสมัครใจ |
+| **อาจารย์รายวิชา** (ผู้ออกข้อสอบ) | เขียนข้อสอบ SBA พร้อม quality checks สด, ส่งรีวิว, รีวิวข้อของผู้อื่นด้วย rubric 7 ข้อ (รีวิวข้อตัวเองไม่ได้), จัดการเวอร์ชัน/ถอน/นำกลับ, ดูสถิติ p, D, การกระจายตัวเลือก, ปิดรายงานจากผู้เรียน, ดูความครอบคลุมของคลังราย subtopic |
+| **อาจารย์ผู้ดูแล** | เห็นเฉพาะผู้เรียนที่ได้รับมอบหมาย, mastery เทียบค่ากลางรุ่น, ธงเสี่ยง (mastery ต่ำ / ไม่เข้าใช้), กิจกรรม 28 วัน, บันทึกแบบ “ผู้เรียนเห็น” หรือ “เฉพาะทีม” |
+| **โรงเรียนแพทย์** (ผู้ดูแลระบบ) | ภาพรวมระดับสถาบัน (ข้อมูลรวมเท่านั้น), สร้างผู้ใช้และออกรหัสผ่านชั่วคราว, กำหนดบทบาท, ปิดบัญชี, รุ่นและสมาชิก, จับคู่อาจารย์ผู้ดูแล, เกณฑ์ธงเสี่ยง, บันทึกการใช้งาน (audit log) |
+
+เนื้อหา: 6 Topics / 23 subtopics (T1 Foundations & Physiology … T6 BMT & Cellular Therapy) อยู่ใน `shared/taxonomy.ts` และใน migration แรก
+
+---
+
+## Deploy บน Netlify
+
+1. **Push โค้ดขึ้น Git** (GitHub/GitLab/Bitbucket) แล้วใน Netlify เลือก *Add new project → Import an existing project*
+   ค่า build อ่านจาก `netlify.toml` อัตโนมัติ (`npm run build`, publish `dist`, functions ใน `netlify/functions`)
+2. **เปิด Netlify Database** ที่ *Data & Storage → Database* (หรือปล่อยให้ Netlify สร้างเองตอน deploy แรกเมื่อเจอ `@netlify/database` และโฟลเดอร์ migrations)
+   ตรวจเงื่อนไขแพ็กเกจที่หน้า *Billing, limits, and compliance* ของ Netlify Database
+3. **ตั้ง environment variables** (*Project configuration → Environment variables*)
+   | ชื่อ | ค่า |
+   |---|---|
+   | `SESSION_SECRET` | สุ่มยาว ≥ 32 ตัวอักษร เช่น `openssl rand -hex 32` — ใช้เซ็น session cookie |
+   | `SETUP_TOKEN` | สุ่มยาว ใช้ครั้งเดียวตอนสร้างผู้ดูแลคนแรก ลบออกได้หลังตั้งค่าเสร็จ |
+4. **Deploy** — Netlify จะรัน migration ใน `netlify/database/migrations/` ก่อน publish ถ้า migration ล้มเหลว deploy จะไม่ถูก publish
+5. เปิดเว็บ → หน้า **ตั้งค่าระบบครั้งแรก** → ใส่ `SETUP_TOKEN` สร้างบัญชีผู้ดูแลระบบ
+   ติ๊ก “ใส่ข้อมูลตัวอย่าง” ถ้าต้องการโจทย์ 16 ข้อ อาจารย์ 3 คน ผู้เรียน 6 คนไว้ทดลอง — ระบบจะแสดงรหัสผ่านชั่วคราวของบัญชีตัวอย่าง **ครั้งเดียว**
+   หน้านี้ใช้ได้เฉพาะตอนที่ยังไม่มีผู้ใช้ในฐานข้อมูลเท่านั้น
+6. ลบ `SETUP_TOKEN` ออกจาก env แล้ว redeploy (ไม่บังคับ แต่แนะนำ)
+
+> Deploy preview ของ Netlify ใช้ database branch ที่คัดลอกจาก production — ทดลองแก้ schema ใน preview ได้โดยไม่กระทบข้อมูลจริง
+
+## รันบนเครื่อง
+
+```bash
+npm install
+npm test                 # 35 tests: API ทั้ง loop รันบน Postgres จริง (PGlite) + unit tests
+npm run build            # typecheck + build frontend
+
+# แบบที่ 1 — ไม่ต้องมีบัญชี Netlify: API + frontend บน Postgres ฝังตัว (PGlite)
+npm run local            # http://localhost:8787 · setup token = "local-setup" · ข้อมูลเก็บใน .local-db/
+LOCAL_DB=memory npm run local   # ฐานข้อมูลชั่วคราว ล้างทุกครั้งที่รันใหม่
+
+# แบบที่ 2 — เหมือน production: Netlify CLI + Postgres ภายในเครื่องของ Netlify Database
+npm i -g netlify-cli
+netlify link
+netlify dev              # ตั้ง SESSION_SECRET / SETUP_TOKEN ใน .env หรือใน Netlify ก่อน
+```
+
+## โครงสร้าง
+
+```
+netlify/
+  functions/api.ts                    ← Netlify Function เดียว รับทุก /api/*
+  database/migrations/*.sql           ← schema (Netlify รันให้ตอน deploy)
+server/
+  app.ts                              ← router, CSRF, auth, role guard
+  auth.ts                             ← scrypt password hash, JWT session cookie
+  analytics.ts                        ← mastery, ค่ากลาง, ธงเสี่ยง, streak
+  routes/{auth,setup,learner,faculty,advisor,admin}.ts
+  seed/                               ← ข้อมูลตัวอย่าง (ใช้ผ่านหน้า setup เท่านั้น)
+  db.ts · db-netlify.ts · db-pglite.ts ← พอร์ตฐานข้อมูล: Netlify Database ใน production, PGlite ใน test/local
+shared/                               ← taxonomy, rubric, quality checks, types (ใช้ร่วมกันหน้า-หลัง)
+src/                                  ← React SPA (pages/Learner, Faculty, Advisor, Admin)
+tests/                                ← vitest
+scripts/local-server.ts               ← เซิร์ฟเวอร์ local แบบไม่พึ่ง Netlify
+```
+
+## ความปลอดภัยและความเป็นส่วนตัว
+
+- **ไม่มีรหัสผ่านฝังในโค้ด** ผู้ใช้ทุกคนได้รหัสชั่วคราวแบบสุ่มจากผู้ดูแลระบบ และต้องตั้งใหม่ตอนเข้าใช้ครั้งแรก
+- รหัสผ่านเก็บแบบ scrypt; session เป็น JWT ใน cookie `HttpOnly; Secure; SameSite=Lax` อายุ 12 ชม.
+- เปลี่ยนรหัส / รีเซ็ต / ปิดบัญชี → session เดิมทุกอุปกรณ์ใช้ไม่ได้ทันที (`session_version`)
+- ใส่รหัสผิด 5 ครั้ง → ล็อก 15 นาที (ผู้ดูแลปลดได้ด้วยการรีเซ็ตรหัส); ข้อความ error ไม่บอกว่าอีเมลมีอยู่หรือไม่
+- CSRF: ทุกคำขอที่แก้ข้อมูลต้องมี header `X-Requested-With: hlms` และ API ไม่เปิด CORS
+- **เฉลยไม่ถูกส่งไปหน้าผู้เรียนก่อนตอบ** — เซิร์ฟเวอร์จำข้อที่แจกไว้และรับคำตอบเฉพาะข้อนั้น
+- ขอบเขตข้อมูลบังคับที่เซิร์ฟเวอร์: อาจารย์ผู้ดูแลเห็นเฉพาะผู้เรียนที่ได้รับมอบหมาย, บันทึก “เฉพาะทีม” ไม่ถูกส่งถึงผู้เรียน, อาจารย์รายวิชาไม่เห็นตัวตนผู้รายงานโจทย์, ผู้ดูแลระบบเห็นผลการเรียนเป็นค่ารวมระดับรุ่น, ตารางอันดับแสดงเฉพาะผู้ที่เลือกเข้าร่วม
+- ทุกการกระทำสำคัญ (ผู้ใช้ สิทธิ์ ข้อสอบ การตั้งค่า) ลง `audit_log`
+
+**ก่อนใช้กับผู้เรียนจริง:** ตรวจนโยบายข้อมูลส่วนบุคคล (PDPA) ของสถาบัน, ตั้ง custom domain + HTTPS, และให้อาจารย์โลหิตวิทยาตรวจโจทย์ตัวอย่างทุกข้อ (ช่องอ้างอิงในข้อมูลตัวอย่างยังเป็นข้อความแทนที่)
+
+## เปลี่ยน schema
+
+เพิ่มไฟล์ใหม่ใน `netlify/database/migrations/` ชื่อ `<timestamp>_<slug>.sql` (เช่น `20261201090000_add_item_images.sql`)
+อย่าแก้ไฟล์ migration ที่ deploy ไปแล้ว ใช้รูปแบบ expand-and-contract สำหรับการเปลี่ยนที่ไม่ backward-compatible
+`npm test` จะรัน migration ทุกไฟล์ตามลำดับบน PGlite ให้ทุกครั้ง
+
+## ระบบล็อกอิน
+
+ใช้ระบบล็อกอินของแอปเอง (บัญชีและบทบาทอยู่ในฐานข้อมูลเดียวกัน ผู้ดูแลเป็นคนออกบัญชี ไม่มีสมัครเอง) จึงไม่ผูกกับบริการภายนอก
+ถ้าภายหลังต้องการ SSO ของมหาวิทยาลัยหรือ MFA สามารถเปลี่ยนเฉพาะ `server/auth.ts` + `routes/auth.ts` ไปใช้ Netlify Identity, Auth0 หรือ OIDC ของสถาบันได้ โดยส่วนอื่นไม่ต้องแก้

@@ -1,0 +1,940 @@
+[
+ {
+  "id": "HEM-0101",
+  "topic": "T1",
+  "subtopic": "t1.hematopoiesis",
+  "level": "Preclinical",
+  "vignette": "นักศึกษาศึกษาลำดับการเจริญของเซลล์ต้นกำเนิดเม็ดเลือดในไขกระดูก",
+  "labs": [],
+  "leadIn": "Progenitor ใดเป็นต้นกำเนิดโดยตรงของ megakaryocyte",
+  "options": [
+   {
+    "key": "A",
+    "text": "CFU-GM",
+    "rationale": "ให้กำเนิด granulocyte และ monocyte"
+   },
+   {
+    "key": "B",
+    "text": "Megakaryocyte-erythroid progenitor (MEP)",
+    "rationale": "MEP แยกเป็นสาย megakaryocyte และ erythroid"
+   },
+   {
+    "key": "C",
+    "text": "Common lymphoid progenitor",
+    "rationale": "ให้กำเนิดเซลล์สาย lymphoid"
+   },
+   {
+    "key": "D",
+    "text": "CFU-E",
+    "rationale": "อยู่ในสาย erythroid เท่านั้น"
+   },
+   {
+    "key": "E",
+    "text": "Hematopoietic stem cell",
+    "rationale": "เป็นต้นกำเนิดของทุกสาย แต่ไม่ใช่ progenitor ขั้นสุดท้ายก่อน megakaryocyte"
+   }
+  ],
+  "correctKey": "B",
+  "explanation": "Common myeloid progenitor แยกเป็น GMP และ MEP โดย MEP ให้กำเนิด megakaryocyte และเม็ดเลือดแดง การเจริญของ megakaryocyte ถูกควบคุมหลักโดย thrombopoietin",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0102",
+  "topic": "T1",
+  "subtopic": "t1.lab-methods",
+  "level": "Clinical",
+  "vignette": "ผู้ป่วยหลายรายถูกส่งปรึกษาเพื่อพิจารณาเจาะไขกระดูก",
+  "labs": [],
+  "leadIn": "ภาวะใดมีข้อบ่งชี้ในการทำ bone marrow aspiration และ biopsy มากที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "Iron deficiency anemia ที่ ferritin ต่ำชัดเจน",
+    "rationale": "วินิจฉัยได้จากการตรวจเลือด"
+   },
+   {
+    "key": "B",
+    "text": "Pancytopenia ที่ยังไม่ทราบสาเหตุ",
+    "rationale": "ต้องประเมินการสร้างเม็ดเลือดและหาโรคในไขกระดูก"
+   },
+   {
+    "key": "C",
+    "text": "Thalassemia trait",
+    "rationale": "วินิจฉัยด้วย hemoglobin typing และ DNA"
+   },
+   {
+    "key": "D",
+    "text": "Vitamin B12 deficiency ที่ยืนยันแล้ว",
+    "rationale": "ไม่จำเป็นเมื่อวินิจฉัยได้จากเลือด"
+   },
+   {
+    "key": "E",
+    "text": "ITP ในเด็กที่อาการเข้าได้ทั่วไป",
+    "rationale": "มักไม่ต้องเจาะไขกระดูกเมื่อลักษณะทางคลินิกตรงไปตรงมา"
+   }
+  ],
+  "correctKey": "B",
+  "explanation": "Pancytopenia ที่ไม่ทราบสาเหตุต้องแยก aplastic anemia, MDS, leukemia และการแทรกในไขกระดูก จึงเป็นข้อบ่งชี้ชัดเจนของการตรวจไขกระดูก",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0142",
+  "topic": "T2",
+  "subtopic": "t2.microcytic",
+  "level": "Clinical",
+  "vignette": "ชายไทยอายุ 24 ปี ตรวจสุขภาพก่อนเข้าทำงาน ไม่มีอาการ ไม่มีประวัติเลือดออกผิดปกติ รับประทานอาหารครบทุกหมู่ ตับและม้ามไม่โต",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "10.2",
+    "unit": "g/dL",
+    "range": "13.0–17.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "RBC count",
+    "value": "5.8",
+    "unit": "×10¹²/L",
+    "range": "4.5–5.9",
+    "flag": "ปกติ"
+   },
+   {
+    "test": "MCV",
+    "value": "64",
+    "unit": "fL",
+    "range": "80–100",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "RDW",
+    "value": "13.1",
+    "unit": "%",
+    "range": "11.5–14.5",
+    "flag": "ปกติ"
+   },
+   {
+    "test": "Serum ferritin",
+    "value": "85",
+    "unit": "ng/mL",
+    "range": "30–400",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การตรวจใดเหมาะสมที่สุดเป็นขั้นตอนถัดไป",
+  "options": [
+   {
+    "key": "A",
+    "text": "ให้ ferrous sulfate 3 เดือนแล้วตรวจซ้ำ",
+    "rationale": "ferritin ปกติ ไม่สนับสนุน iron deficiency"
+   },
+   {
+    "key": "B",
+    "text": "Hemoglobin typing (HPLC หรือ capillary electrophoresis)",
+    "rationale": "RBC สูงสัมพัทธ์กับ MCV ที่ต่ำมาก RDW และ ferritin ปกติ เข้าได้กับ thalassemia trait"
+   },
+   {
+    "key": "C",
+    "text": "Bone marrow aspiration ร่วมกับ iron stain",
+    "rationale": "invasive และไม่จำเป็นในขั้นนี้"
+   },
+   {
+    "key": "D",
+    "text": "Serum B12 และ folate",
+    "rationale": "ใช้ประเมิน macrocytic anemia"
+   },
+   {
+    "key": "E",
+    "text": "Colonoscopy",
+    "rationale": "ข้อบ่งชี้เมื่อพบ iron deficiency โดยไม่ทราบสาเหตุ"
+   }
+  ],
+  "correctKey": "B",
+  "explanation": "Microcytic anemia ที่ RBC ปกติถึงสูง RDW และ ferritin ปกติ เข้าได้กับ thalassemia trait (Mentzer index ≈ 11) ตรวจ hemoglobin typing เพื่อหา HbE หรือ β-thalassemia trait หากปกติยังตัด α-thalassemia trait ไม่ได้ ต้องตรวจ DNA",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0103",
+  "topic": "T2",
+  "subtopic": "t2.macrocytic",
+  "level": "Clinical",
+  "vignette": "ชายอายุ 55 ปี อ่อนเพลีย ชาปลายมือปลายเท้าและเดินเซ 3 เดือน ตรวจพบ position sense ลดลงที่เท้า smear พบ hypersegmented neutrophils",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "8.9",
+    "unit": "g/dL",
+    "range": "13.0–17.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "MCV",
+    "value": "112",
+    "unit": "fL",
+    "range": "80–100",
+    "flag": "สูง"
+   },
+   {
+    "test": "Platelet",
+    "value": "140",
+    "unit": "×10⁹/L",
+    "range": "150–450",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Serum vitamin B12",
+    "value": "110",
+    "unit": "pg/mL",
+    "range": "200–900",
+    "flag": "ต่ำ"
+   }
+  ],
+  "leadIn": "ภาวะใดอธิบายอาการทั้งหมดได้ดีที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "Folate deficiency",
+    "rationale": "ทำให้ megaloblastic anemia แต่ไม่ทำให้เกิด subacute combined degeneration"
+   },
+   {
+    "key": "B",
+    "text": "Vitamin B12 deficiency",
+    "rationale": "ทำให้ทั้ง megaloblastic anemia และความผิดปกติของ dorsal column"
+   },
+   {
+    "key": "C",
+    "text": "Alcohol-related macrocytosis",
+    "rationale": "มักไม่มี hypersegmented neutrophils"
+   },
+   {
+    "key": "D",
+    "text": "Hypothyroidism",
+    "rationale": "ทำให้ macrocytosis เล็กน้อย ไม่มีอาการ dorsal column"
+   },
+   {
+    "key": "E",
+    "text": "Myelodysplastic syndrome",
+    "rationale": "ไม่อธิบายอาการทางระบบประสาท"
+   }
+  ],
+  "correctKey": "B",
+  "explanation": "Megaloblastic anemia ร่วมกับ subacute combined degeneration ชี้ไปที่การขาดวิตามิน B12 ห้ามให้ folate อย่างเดียวเพราะอาจทำให้อาการทางระบบประสาทแย่ลง",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0133",
+  "topic": "T2",
+  "subtopic": "t2.hemolytic.intrinsic",
+  "level": "Clinical",
+  "vignette": "ชายอายุ 20 ปี ซีดและปัสสาวะสีเข้ม 2 วัน หลังรับประทานถั่วปากอ้า smear พบ bite cells",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "7.4",
+    "unit": "g/dL",
+    "range": "13.0–17.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Reticulocyte",
+    "value": "8.0",
+    "unit": "%",
+    "range": "0.5–2.5",
+    "flag": "สูง"
+   },
+   {
+    "test": "Indirect bilirubin",
+    "value": "4.2",
+    "unit": "mg/dL",
+    "range": "0.1–0.8",
+    "flag": "สูง"
+   },
+   {
+    "test": "Direct antiglobulin test",
+    "value": "Negative",
+    "unit": "",
+    "range": "—",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การวินิจฉัยที่เป็นไปได้มากที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "G6PD deficiency",
+    "rationale": "hemolysis เฉียบพลันหลังสัมผัส oxidant ร่วมกับ bite cells"
+   },
+   {
+    "key": "B",
+    "text": "Hereditary spherocytosis",
+    "rationale": "มักมี spherocytes และประวัติเรื้อรัง"
+   },
+   {
+    "key": "C",
+    "text": "Autoimmune hemolytic anemia",
+    "rationale": "DAT มักเป็นบวก"
+   },
+   {
+    "key": "D",
+    "text": "PNH",
+    "rationale": "ไม่สัมพันธ์กับการกินถั่วปากอ้า"
+   },
+   {
+    "key": "E",
+    "text": "Thalassemia",
+    "rationale": "เป็น microcytic anemia เรื้อรัง"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "การตรวจระดับ G6PD ช่วงเม็ดเลือดแดงแตกเฉียบพลันอาจได้ค่าปกติลวง เพราะ reticulocyte มีเอนไซม์สูง ควรตรวจซ้ำหลังหายราว 2–3 เดือนหากผลไม่ชัด",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0136",
+  "topic": "T2",
+  "subtopic": "t2.marrow-failure",
+  "level": "Clinical",
+  "vignette": "ชายอายุ 30 ปี ปัสสาวะสีโคล่าช่วงเช้าเป็นพัก ๆ และอ่อนเพลีย",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "8.5",
+    "unit": "g/dL",
+    "range": "13.0–17.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Reticulocyte",
+    "value": "7.0",
+    "unit": "%",
+    "range": "0.5–2.5",
+    "flag": "สูง"
+   },
+   {
+    "test": "LDH",
+    "value": "1,800",
+    "unit": "U/L",
+    "range": "135–225",
+    "flag": "สูง"
+   },
+   {
+    "test": "Direct antiglobulin test",
+    "value": "Negative",
+    "unit": "",
+    "range": "—",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การตรวจใดยืนยันการวินิจฉัยได้ดีที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "Flow cytometry หา GPI-anchored proteins (CD55/CD59, FLAER)",
+    "rationale": "ยืนยัน PNH clone"
+   },
+   {
+    "key": "B",
+    "text": "Osmotic fragility test",
+    "rationale": "ใช้ใน hereditary spherocytosis"
+   },
+   {
+    "key": "C",
+    "text": "G6PD assay",
+    "rationale": "ไม่สอดคล้องกับปัสสาวะสีเข้มช่วงเช้าที่เป็นซ้ำ"
+   },
+   {
+    "key": "D",
+    "text": "Hemoglobin typing",
+    "rationale": "ใช้วินิจฉัย hemoglobinopathy"
+   },
+   {
+    "key": "E",
+    "text": "Bone marrow biopsy",
+    "rationale": "ไม่ใช่การตรวจยืนยัน PNH"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "PNH เกิดจากการขาด GPI-anchored complement regulators บนผิวเซลล์ ยืนยันด้วย flow cytometry ซึ่งเป็นมาตรฐานการวินิจฉัย",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0127",
+  "topic": "T3",
+  "subtopic": "t3.mpn",
+  "level": "Clinical",
+  "vignette": "หญิงอายุ 58 ปี อ่อนเพลียและอิ่มเร็ว 2 เดือน คลำม้ามได้ต่ำกว่าชายโครงซ้าย 12 cm smear พบเม็ดเลือดขาวทุกระยะการเจริญและ basophil 6%",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "10.8",
+    "unit": "g/dL",
+    "range": "12.0–15.5",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "WBC",
+    "value": "85",
+    "unit": "×10⁹/L",
+    "range": "4.0–10.0",
+    "flag": "สูง"
+   },
+   {
+    "test": "Platelet",
+    "value": "520",
+    "unit": "×10⁹/L",
+    "range": "150–450",
+    "flag": "สูง"
+   }
+  ],
+  "leadIn": "การตรวจใดยืนยันการวินิจฉัยได้ดีที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "BCR::ABL1 ด้วย RT-PCR หรือ FISH",
+    "rationale": "ยืนยัน CML"
+   },
+   {
+    "key": "B",
+    "text": "JAK2 V617F mutation",
+    "rationale": "พบใน PV, ET, PMF"
+   },
+   {
+    "key": "C",
+    "text": "Flow cytometry หา CD34+ blasts",
+    "rationale": "ไม่ยืนยัน CML"
+   },
+   {
+    "key": "D",
+    "text": "Leukocyte alkaline phosphatase score",
+    "rationale": "ไม่จำเพาะ ใช้น้อยลงแล้ว"
+   },
+   {
+    "key": "E",
+    "text": "Iron stain ของไขกระดูก",
+    "rationale": "ไม่เกี่ยวข้อง"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "Leukocytosis มาก left shift, basophilia และม้ามโต ชวนนึกถึง CML ยืนยันด้วย t(9;22) หรือ BCR::ABL1",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0145",
+  "topic": "T3",
+  "subtopic": "t3.acute-leukemia",
+  "level": "Clinical",
+  "vignette": "ชายอายุ 35 ปี เลือดออกตามไรฟันและจ้ำเลือด 1 สัปดาห์ smear พบ abnormal promyelocytes จำนวนมากที่มี Auer rods หลายแท่ง",
+  "labs": [
+   {
+    "test": "WBC",
+    "value": "2.1",
+    "unit": "×10⁹/L",
+    "range": "4.0–10.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Platelet",
+    "value": "18",
+    "unit": "×10⁹/L",
+    "range": "150–450",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "PT",
+    "value": "18.5",
+    "unit": "s",
+    "range": "11–14",
+    "flag": "สูง"
+   },
+   {
+    "test": "Fibrinogen",
+    "value": "90",
+    "unit": "mg/dL",
+    "range": "200–400",
+    "flag": "ต่ำ"
+   }
+  ],
+  "leadIn": "การรักษาใดควรเริ่มทันทีเมื่อสงสัยภาวะนี้",
+  "options": [
+   {
+    "key": "A",
+    "text": "All-trans retinoic acid (ATRA)",
+    "rationale": "สงสัย APL ต้องเริ่มทันทีเพื่อลดความเสี่ยงเลือดออกจาก coagulopathy"
+   },
+   {
+    "key": "B",
+    "text": "Imatinib",
+    "rationale": "ใช้ใน CML และ Ph+ ALL"
+   },
+   {
+    "key": "C",
+    "text": "Rituximab",
+    "rationale": "ใช้ใน B-cell lymphoproliferative disorders"
+   },
+   {
+    "key": "D",
+    "text": "Hydroxyurea เพียงอย่างเดียว",
+    "rationale": "ไม่ใช่การรักษาจำเพาะ"
+   },
+   {
+    "key": "E",
+    "text": "Rasburicase เพียงอย่างเดียว",
+    "rationale": "ใช้ป้องกัน tumor lysis syndrome"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "APL เป็นภาวะฉุกเฉินจาก coagulopathy ควรเริ่ม ATRA ทันทีโดยไม่ต้องรอผลยืนยันทางพันธุกรรม ร่วมกับแก้ไขภาวะเลือดออก",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0138",
+  "topic": "T4",
+  "subtopic": "t4.primary-hemostasis",
+  "level": "Resident",
+  "vignette": "หญิงอายุ 32 ปี มีไข้ สับสน และจ้ำเลือดตามแขนขา 2 วัน smear พบ schistocytes จำนวนมาก",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "7.8",
+    "unit": "g/dL",
+    "range": "12.0–15.5",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Platelet",
+    "value": "12",
+    "unit": "×10⁹/L",
+    "range": "150–450",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "LDH",
+    "value": "1,250",
+    "unit": "U/L",
+    "range": "135–225",
+    "flag": "สูง"
+   },
+   {
+    "test": "Creatinine",
+    "value": "1.4",
+    "unit": "mg/dL",
+    "range": "0.5–1.1",
+    "flag": "สูง"
+   },
+   {
+    "test": "PT / aPTT",
+    "value": "ปกติ",
+    "unit": "",
+    "range": "—",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การรักษาใดเหมาะสมที่สุดในขั้นแรก",
+  "options": [
+   {
+    "key": "A",
+    "text": "Platelet transfusion",
+    "rationale": "อาจทำให้ microthrombi แย่ลง ให้เฉพาะเลือดออกรุนแรง"
+   },
+   {
+    "key": "B",
+    "text": "Therapeutic plasma exchange",
+    "rationale": "เข้าได้กับ TTP เริ่มโดยเร็วโดยไม่ต้องรอผล ADAMTS13"
+   },
+   {
+    "key": "C",
+    "text": "Unfractionated heparin",
+    "rationale": "ไม่มีข้อบ่งชี้ PT/aPTT ปกติ"
+   },
+   {
+    "key": "D",
+    "text": "IVIG ขนาดสูงเพียงอย่างเดียว",
+    "rationale": "ใช้ใน ITP"
+   },
+   {
+    "key": "E",
+    "text": "High-dose corticosteroid เพียงอย่างเดียว",
+    "rationale": "ใช้ร่วมได้ แต่ไม่พอเป็นการรักษาหลัก"
+   }
+  ],
+  "correctKey": "B",
+  "explanation": "MAHA ร่วมกับเกล็ดเลือดต่ำมากและอาการทางสมอง ชวนนึกถึง TTP ต้องเริ่ม plasma exchange โดยเร็ว และส่ง ADAMTS13 ก่อนเริ่ม",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0112",
+  "topic": "T4",
+  "subtopic": "t4.coagulation",
+  "level": "Clinical",
+  "vignette": "เด็กชายอายุ 6 ปี ข้อเข่าบวมจากเลือดออกในข้อหลังหกล้มเล็กน้อย มีลุงฝั่งแม่เลือดออกง่าย",
+  "labs": [
+   {
+    "test": "PT",
+    "value": "12.5",
+    "unit": "s",
+    "range": "11–14",
+    "flag": "ปกติ"
+   },
+   {
+    "test": "aPTT",
+    "value": "68",
+    "unit": "s",
+    "range": "25–35",
+    "flag": "สูง"
+   },
+   {
+    "test": "Mixing study (aPTT)",
+    "value": "correct",
+    "unit": "",
+    "range": "—",
+    "flag": "ปกติ"
+   },
+   {
+    "test": "Factor VIII",
+    "value": "2",
+    "unit": "%",
+    "range": "50–150",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Factor IX",
+    "value": "95",
+    "unit": "%",
+    "range": "50–150",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การวินิจฉัยที่เหมาะสมที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "Hemophilia A ระดับปานกลาง",
+    "rationale": "FVIII 1–5%"
+   },
+   {
+    "key": "B",
+    "text": "Hemophilia A ระดับรุนแรง",
+    "rationale": "ต้องมี FVIII ต่ำกว่า 1%"
+   },
+   {
+    "key": "C",
+    "text": "Hemophilia B",
+    "rationale": "FIX ปกติ"
+   },
+   {
+    "key": "D",
+    "text": "von Willebrand disease type 3",
+    "rationale": "มักมี mucosal bleeding และ VWF ไม่มีเลย ต้องตรวจเพิ่ม"
+   },
+   {
+    "key": "E",
+    "text": "Acquired FVIII inhibitor",
+    "rationale": "mixing study จะไม่ correct"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "aPTT ยาวที่ correct ด้วยพลาสมาปกติ ชี้ไปที่การขาดแฟกเตอร์ FVIII 2% ร่วมกับประวัติครอบครัวแบบ X-linked เข้าได้กับ hemophilia A ระดับปานกลาง",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0139",
+  "topic": "T4",
+  "subtopic": "t4.thrombosis",
+  "level": "Resident",
+  "vignette": "หญิงอายุ 45 ปี ขาซ้ายบวมเจ็บ 3 วัน หลังเดินทางโดยเครื่องบิน 12 ชั่วโมง duplex ultrasound พบ proximal DVT ไม่มีมะเร็ง ไม่มีข้อห้ามของยาต้านการแข็งตัวของเลือด",
+  "labs": [
+   {
+    "test": "Creatinine",
+    "value": "0.8",
+    "unit": "mg/dL",
+    "range": "0.5–1.1",
+    "flag": "ปกติ"
+   },
+   {
+    "test": "Platelet",
+    "value": "250",
+    "unit": "×10⁹/L",
+    "range": "150–450",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การรักษาใดเหมาะสมที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "DOAC อย่างน้อย 3 เดือน",
+    "rationale": "provoked DVT จากปัจจัยเสี่ยงชั่วคราว"
+   },
+   {
+    "key": "B",
+    "text": "Aspirin",
+    "rationale": "ไม่เพียงพอสำหรับรักษา DVT"
+   },
+   {
+    "key": "C",
+    "text": "ใส่ IVC filter",
+    "rationale": "พิจารณาเมื่อมีข้อห้ามของ anticoagulant"
+   },
+   {
+    "key": "D",
+    "text": "Warfarin โดยไม่ให้ parenteral anticoagulant ร่วม",
+    "rationale": "ต้องให้ heparin ร่วมจน INR ถึงเป้า"
+   },
+   {
+    "key": "E",
+    "text": "เฝ้าดูอาการโดยไม่ให้ยา",
+    "rationale": "proximal DVT เสี่ยง PE"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "Proximal DVT ที่มีปัจจัยกระตุ้นชั่วคราวให้ยาต้านการแข็งตัวของเลือดอย่างน้อย 3 เดือน DOAC เป็นทางเลือกแรกในผู้ป่วยที่ไม่มีข้อห้าม",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0131",
+  "topic": "T5",
+  "subtopic": "t5.transfusion",
+  "level": "Intern",
+  "vignette": "ผู้ป่วยได้รับ packed red cells ไป 10 นาที มีไข้ หนาวสั่น ปวดหลัง ความดันต่ำ และปัสสาวะสีเข้ม",
+  "labs": [],
+  "leadIn": "ขั้นตอนแรกที่ควรทำคือข้อใด",
+  "options": [
+   {
+    "key": "A",
+    "text": "หยุดให้เลือดทันทีและเปิดเส้นด้วย normal saline",
+    "rationale": "สงสัย acute hemolytic transfusion reaction"
+   },
+   {
+    "key": "B",
+    "text": "ให้ antihistamine แล้วให้เลือดต่อ",
+    "rationale": "ใช้กับปฏิกิริยาลมพิษเล็กน้อยเท่านั้น"
+   },
+   {
+    "key": "C",
+    "text": "ชะลออัตราการให้เลือด",
+    "rationale": "ไม่เพียงพอเมื่อมีความดันต่ำ"
+   },
+   {
+    "key": "D",
+    "text": "ให้ furosemide",
+    "rationale": "ใช้ใน TACO"
+   },
+   {
+    "key": "E",
+    "text": "ส่ง crossmatch ใหม่แล้วให้ยูนิตถัดไป",
+    "rationale": "ต้องหยุดและสืบหาสาเหตุก่อน"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "อาการเข้าได้กับ acute hemolytic transfusion reaction ต้องหยุดให้เลือด ตรวจสอบตัวผู้ป่วยและถุงเลือด ส่งเลือดและถุงกลับธนาคารเลือด และดูแลระบบไหลเวียน",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0132",
+  "topic": "T5",
+  "subtopic": "t5.transfusion",
+  "level": "Intern",
+  "vignette": "ผู้ป่วยหมู่เลือด A Rh บวก มีภาวะเลือดออกจาก coagulopathy แพทย์สั่ง fresh frozen plasma",
+  "labs": [],
+  "leadIn": "FFP หมู่ใดให้ผู้ป่วยรายนี้ได้",
+  "options": [
+   {
+    "key": "A",
+    "text": "หมู่ O เท่านั้น",
+    "rationale": "พลาสมาหมู่ O มี anti-A ทำลายเม็ดเลือดแดงของผู้ป่วย"
+   },
+   {
+    "key": "B",
+    "text": "หมู่ A หรือ AB",
+    "rationale": "ไม่มี anti-A ในพลาสมา"
+   },
+   {
+    "key": "C",
+    "text": "หมู่ B หรือ AB",
+    "rationale": "พลาสมาหมู่ B มี anti-A"
+   },
+   {
+    "key": "D",
+    "text": "หมู่ O หรือ A",
+    "rationale": "หมู่ O มี anti-A"
+   },
+   {
+    "key": "E",
+    "text": "หมู่ใดก็ได้",
+    "rationale": "ต้องเข้ากันได้ตามระบบ ABO"
+   }
+  ],
+  "correctKey": "B",
+  "explanation": "การเลือกพลาสมาดูจากแอนติบอดีในพลาสมาผู้ให้ ผู้ป่วยหมู่ A รับพลาสมาที่ไม่มี anti-A คือหมู่ A หรือ AB",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0155",
+  "topic": "T6",
+  "subtopic": "t6.gvhd",
+  "level": "Fellow",
+  "vignette": "ผู้ป่วยหลัง allogeneic HSCT วันที่ 21 มีผื่นแดงที่ฝ่ามือฝ่าเท้า bilirubin สูงขึ้น และถ่ายเหลวมาก",
+  "labs": [
+   {
+    "test": "Total bilirubin",
+    "value": "3.1",
+    "unit": "mg/dL",
+    "range": "0.2–1.2",
+    "flag": "สูง"
+   }
+  ],
+  "leadIn": "การวินิจฉัยที่เป็นไปได้มากที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "Acute GVHD",
+    "rationale": "ผิวหนัง ตับ และทางเดินอาหาร หลัง engraftment"
+   },
+   {
+    "key": "B",
+    "text": "Chronic GVHD",
+    "rationale": "ลักษณะทางคลินิกต่างจากนี้ เช่น sclerotic หรือ lichenoid"
+   },
+   {
+    "key": "C",
+    "text": "Engraftment syndrome",
+    "rationale": "ไข้และผื่นช่วง engraftment โดยไม่มีอาการตับและลำไส้ชัด"
+   },
+   {
+    "key": "D",
+    "text": "Drug eruption เพียงอย่างเดียว",
+    "rationale": "ไม่อธิบายตับและลำไส้"
+   },
+   {
+    "key": "E",
+    "text": "SOS/VOD",
+    "rationale": "ตัวเหลือง ตับโต น้ำหนักขึ้น ไม่มีผื่น"
+   }
+  ],
+  "correctKey": "A",
+  "explanation": "Acute GVHD มีอวัยวะเป้าหมายคือผิวหนัง ตับ และทางเดินอาหาร ต้องตัดการติดเชื้อและยืนยันด้วยชิ้นเนื้อเมื่อทำได้",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "approved"
+ },
+ {
+  "id": "HEM-0150",
+  "topic": "T3",
+  "subtopic": "t3.mds",
+  "level": "Clinical",
+  "vignette": "ชายอายุ 72 ปี อ่อนเพลีย 6 เดือน smear พบ pseudo-Pelger-Huët cells และ macro-ovalocytes ไขกระดูก blast 3% มี dysplasia ใน 2 สายเซลล์",
+  "labs": [
+   {
+    "test": "Hemoglobin",
+    "value": "8.6",
+    "unit": "g/dL",
+    "range": "13.0–17.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "WBC",
+    "value": "2.6",
+    "unit": "×10⁹/L",
+    "range": "4.0–10.0",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Platelet",
+    "value": "68",
+    "unit": "×10⁹/L",
+    "range": "150–450",
+    "flag": "ต่ำ"
+   },
+   {
+    "test": "Vitamin B12 / folate",
+    "value": "ปกติ",
+    "unit": "",
+    "range": "—",
+    "flag": "ปกติ"
+   }
+  ],
+  "leadIn": "การวินิจฉัยที่เป็นไปได้มากที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "Aplastic anemia",
+    "rationale": "ไขกระดูกจะ hypocellular และไม่มี dysplasia"
+   },
+   {
+    "key": "B",
+    "text": "Megaloblastic anemia",
+    "rationale": "B12 และ folate ปกติ"
+   },
+   {
+    "key": "C",
+    "text": "Acute myeloid leukemia",
+    "rationale": "blast ไม่ถึงเกณฑ์"
+   },
+   {
+    "key": "D",
+    "text": "Myelodysplastic syndrome",
+    "rationale": "cytopenia ร่วม dysplasia และ blast ต่ำกว่าเกณฑ์ AML"
+   },
+   {
+    "key": "E",
+    "text": "Hairy cell leukemia",
+    "rationale": "ลักษณะเซลล์ไม่เข้ากัน"
+   }
+  ],
+  "correctKey": "D",
+  "explanation": "Cytopenia ร่วมกับ dysplasia ในไขกระดูก หลังตัดสาเหตุจากการขาดวิตามินแล้ว และ blast ต่ำกว่าเกณฑ์ AML เข้าได้กับ MDS ต่อด้วย cytogenetics เพื่อแบ่งกลุ่มความเสี่ยง",
+  "reference": "[ผู้เขียนระบุแนวทางเวชปฏิบัติหรือตำราที่ใช้อ้างอิง]",
+  "status": "review"
+ },
+ {
+  "id": "HEM-0158",
+  "topic": "T6",
+  "subtopic": "t6.cellular-therapy",
+  "level": "Fellow",
+  "vignette": "ผู้ป่วย DLBCL หลังได้ CAR-T cells วันที่ 3 มีไข้ 39.5°C และความดันต่ำที่ตอบสนองต่อสารน้ำ",
+  "labs": [],
+  "leadIn": "การรักษาใดเหมาะสมที่สุด",
+  "options": [
+   {
+    "key": "A",
+    "text": "ยาปฏิชีวนะอย่างเดียว",
+    "rationale": ""
+   },
+   {
+    "key": "B",
+    "text": "Tocilizumab",
+    "rationale": ""
+   },
+   {
+    "key": "C",
+    "text": "",
+    "rationale": ""
+   },
+   {
+    "key": "D",
+    "text": "",
+    "rationale": ""
+   },
+   {
+    "key": "E",
+    "text": "",
+    "rationale": ""
+   }
+  ],
+  "correctKey": "",
+  "explanation": "",
+  "reference": "",
+  "status": "draft"
+ }
+]
