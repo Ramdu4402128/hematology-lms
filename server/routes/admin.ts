@@ -6,6 +6,7 @@ import { readBody, notFound, conflict, bad } from "../http";
 import { hashPassword, tempPassword } from "../auth";
 import { groupMedian, latestAttempts, masteryFrom } from "../analytics";
 import { ROLES } from "../../shared/taxonomy";
+import { seedSampleBank } from "../seed/sample-bank";
 
 const A = ["school_admin"] as const;
 const uuid = z.string().uuid();
@@ -37,7 +38,31 @@ const settingsSchema = z.object({
 
 const isUniqueViolation = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: string }).code === "23505";
 
+const importSchema = z.object({ status: z.enum(["draft", "approved"]) });
+
 export const adminRoutes: Route[] = [
+  {
+    method: "GET", path: "/api/admin/sample-bank", access: [...A],
+    async handler({ ctx }) {
+      const r = await ctx.db.query<{ status: string; n: string }>(`SELECT status, count(*) AS n FROM items WHERE origin = 'sample_bank' GROUP BY status`);
+      return { imported: r.length > 0, counts: Object.fromEntries(r.map((x) => [x.status, Number(x.n)])), available: 230 };
+    },
+  },
+  {
+    // Lets an already-initialised school pull in the simulated bank later (as drafts for review, or approved for a pilot).
+    method: "POST", path: "/api/admin/sample-bank/import", access: [...A],
+    async handler({ req, ctx, user }) {
+      const { status } = await readBody(req, importSchema);
+      return ctx.db.tx(async (db) => {
+        const existing = await one(db, `SELECT 1 FROM items WHERE origin = 'sample_bank' LIMIT 1`);
+        if (existing) throw conflict("already_imported", "นำเข้าคลังโจทย์ตัวอย่างไปแล้ว");
+        const next = await one<{ n: string }>(db, `SELECT COALESCE(max(CAST(substring(id from 5) AS integer)), 200) + 1 AS n FROM items`);
+        const n = await seedSampleBank(db, ctx.now(), { authorId: null, reviewerId: status === "approved" ? user.id : null, status, startNumber: Math.max(201, Number(next!.n)) });
+        await audit(db, user.id, "sample_bank.import", "", { status, count: n });
+        return { imported: n };
+      });
+    },
+  },
   {
     method: "GET", path: "/api/admin/overview", access: [...A],
     async handler({ ctx }) {

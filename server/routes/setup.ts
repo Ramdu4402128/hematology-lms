@@ -6,6 +6,7 @@ import { one } from "../db";
 import { readBody, HttpError, notFound } from "../http";
 import { hashPassword, PASSWORD_MIN } from "../auth";
 import { seedDemo } from "../seed/demo";
+import { seedSampleBank } from "../seed/sample-bank";
 
 const setupSchema = z.object({
   email: z.string().trim().email().max(200),
@@ -13,6 +14,7 @@ const setupSchema = z.object({
   password: z.string().min(PASSWORD_MIN).max(200),
   schoolName: z.string().trim().max(200).optional(),
   demo: z.boolean().default(false),
+  sampleBank: z.enum(["none", "draft", "approved"]).default("none"),
 });
 
 const digest = (s: string) => createHash("sha256").update(s).digest();
@@ -44,8 +46,11 @@ export const setupRoutes: Route[] = [
         await db.query(`INSERT INTO user_roles (user_id, role) VALUES ($1,'school_admin')`, [u!.id]);
         if (b.schoolName) await db.query(`UPDATE settings SET value = $1::jsonb WHERE key = 'school'`, [JSON.stringify({ name: b.schoolName })]);
         const demoAccounts = b.demo ? await seedDemo(db, ctx.now()) : [];
-        await audit(db, u!.id, "setup", "", { demo: b.demo });
-        return { ok: true, demoAccounts };
+        // Without demo data, the sample bank can still be imported — as drafts for faculty to review, or approved for a pilot.
+        let sampleBank = 0;
+        if (!b.demo && b.sampleBank !== "none") sampleBank = await seedSampleBank(db, ctx.now(), { authorId: null, reviewerId: null, status: b.sampleBank });
+        await audit(db, u!.id, "setup", "", { demo: b.demo, sampleBank: b.demo ? "approved" : b.sampleBank });
+        return { ok: true, demoAccounts, sampleBank };
       });
     },
   },

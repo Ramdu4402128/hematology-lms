@@ -53,6 +53,7 @@ export function LearnerApp({ me, setMe }: { me: MeX; setMe: (m: MeX) => void }) 
 function Practice({ summary, onAnswered, onOpenNote, mode }: { summary: Summary | null; onAnswered: () => void; onOpenNote: (id: string) => void; mode?: "notebook" }) {
   const toast = useToast();
   const [topic, setTopic] = useState<string>(() => { try { return localStorage.getItem("hlms.topic") ?? "all"; } catch { return "all"; } });
+  const [lang, setLang] = useState<"th" | "en">(() => { try { return localStorage.getItem("hlms.lang") === "en" ? "en" : "th"; } catch { return "th"; } });
   const [q, setQ] = useState<{ question: LearnerQuestion | null; mode: string; remainingNew?: number } | null>(null);
   const [choice, setChoice] = useState<string | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
@@ -60,9 +61,9 @@ function Practice({ summary, onAnswered, onOpenNote, mode }: { summary: Summary 
   const [err, setErr] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
 
-  async function load(skip = false, t = topic) {
+  async function load(skip = false, t = topic, l = lang) {
     setBusy(true); setErr(null); setResult(null); setChoice(null); setReporting(false);
-    const params = mode === "notebook" ? { mode: "notebook", ...(skip ? { skip: "1" } : {}) } : { ...(t !== "all" ? { topic: t } : {}), ...(skip ? { skip: "1" } : {}) };
+    const params = { lang: l, ...(mode === "notebook" ? { mode: "notebook" } : t !== "all" ? { topic: t } : {}), ...(skip ? { skip: "1" } : {}) };
     try { setQ(await get(`/api/learner/next?${new URLSearchParams(params)}`)); }
     catch (e) { setErr(errText(e)); } finally { setBusy(false); }
   }
@@ -73,10 +74,16 @@ function Practice({ summary, onAnswered, onOpenNote, mode }: { summary: Summary 
     try { localStorage.setItem("hlms.topic", t); } catch { /* ignore */ }
     load(true, t);
   }
+  /** Language is chosen before a set; switching re-serves the same open question in the other language. */
+  function pickLang(l: "th" | "en") {
+    setLang(l);
+    try { localStorage.setItem("hlms.lang", l); } catch { /* ignore */ }
+    if (!result) load(false, topic, l);
+  }
   async function submit() {
     if (!q?.question || !choice) return;
     setBusy(true);
-    try { setResult(await post("/api/learner/answer", { itemId: q.question.id, choice })); onAnswered(); }
+    try { setResult(await post("/api/learner/answer", { itemId: q.question.id, choice, lang })); onAnswered(); }
     catch (e) { toast(errText(e)); load(); } finally { setBusy(false); }
   }
 
@@ -85,10 +92,17 @@ function Practice({ summary, onAnswered, onOpenNote, mode }: { summary: Summary 
   return (
     <div className="grid">
       <section className="panel stack" aria-labelledby="qh">
-        {mode !== "notebook" && <div className="row" role="group" aria-label="เลือก Topic">
-          <button type="button" className="chip" aria-pressed={topic === "all"} onClick={() => pickTopic("all")}>ปรับตามจุดอ่อน</button>
-          {TOPICS.map((t) => <button key={t.code} type="button" className="chip" aria-pressed={topic === t.code} onClick={() => pickTopic(t.code)} title={t.name}>{t.code}</button>)}
-        </div>}
+        <div className="row-between">
+          {mode !== "notebook" ? <div className="row" role="group" aria-label="เลือก Topic">
+            <button type="button" className="chip" aria-pressed={topic === "all"} onClick={() => pickTopic("all")}>ปรับตามจุดอ่อน</button>
+            {TOPICS.map((t) => <button key={t.code} type="button" className="chip" aria-pressed={topic === t.code} onClick={() => pickTopic(t.code)} title={t.name}>{t.code}</button>)}
+          </div> : <span />}
+          <div className="roles lang-switch" role="group" aria-label="ภาษาของโจทย์">
+            <button type="button" aria-pressed={lang === "th"} onClick={() => pickLang("th")} disabled={busy}>ไทย</button>
+            <button type="button" aria-pressed={lang === "en"} onClick={() => pickLang("en")} disabled={busy}>EN</button>
+          </div>
+        </div>
+        {lang === "en" && question && question.lang === "th" && <p className="small muted" style={{ margin: 0 }}>ข้อนี้ยังไม่มีฉบับภาษาอังกฤษ แสดงภาษาไทยแทน</p>}
         <h2 id="qh" className="sr-only">โจทย์</h2>
         {err ? <Loading error={err} /> : !q ? <Loading /> : !question ? (
           <div className="empty">{mode === "notebook" ? "ทบทวนครบทุกข้อที่ถึงรอบแล้ว ข้อถัดไปจะกลับมาตามนัด" : topic === "all" ? "ยังไม่มีโจทย์ที่อนุมัติในคลัง" : `ยังไม่มีโจทย์ที่อนุมัติใน ${topic} ${topicName(topic)}`}</div>

@@ -21,7 +21,7 @@ export function AdminApp({ me }: { me: Me }) {
       {tab === "membership" && <MembershipAdmin />}
       {tab === "cohorts" && <Cohorts />}
       {tab === "assign" && <Assignments />}
-      {tab === "settings" && <SettingsForm />}
+      {tab === "settings" && <div className="stack"><SettingsForm /><SampleBankPanel /></div>}
       {tab === "audit" && <Audit />}
     </>
   );
@@ -254,6 +254,28 @@ function Assignments() {
         <ul className="list-plain">{learners.map((l) => (
           <li key={l.id}><label className="check"><input type="checkbox" checked={assigned.has(l.id)} onChange={(e) => toggle(l.id, e.target.checked)} />
             <span>{l.displayName} <span className="small muted">{l.cohorts.join(", ")}{countFor(l.id) === 0 ? " · ยังไม่มีอาจารย์ผู้ดูแล" : ""}</span></span></label></li>))}</ul>
+      )}
+    </section>
+  );
+}
+
+function SampleBankPanel() {
+  const toast = useToast();
+  const sb = useLoad<{ imported: boolean; counts: Record<string, number>; available: number }>(() => get("/api/admin/sample-bank"), []);
+  if (!sb.data) return <Loading error={sb.error} />;
+  async function imp(status: "draft" | "approved") {
+    if (!confirm(status === "approved" ? "นำเข้า 230 ข้อเป็น Approved ทันที (ใช้ทดลอง/นำร่อง) — โจทย์เป็นร่างอัตโนมัติที่ยังไม่ผ่านการตรวจโดยอาจารย์ของสถาบัน ยืนยัน?" : "นำเข้า 230 ข้อเป็น Draft ให้อาจารย์ตรวจและส่งรีวิวก่อนใช้ ยืนยัน?")) return;
+    try { const r = await post<{ imported: number }>("/api/admin/sample-bank/import", { status }); toast(`นำเข้า ${r.imported} ข้อแล้ว`); sb.reload(); } catch (e) { toast(errText(e)); }
+  }
+  return (
+    <section className="panel stack" style={{ maxWidth: 560 }}>
+      <h2 style={{ fontSize: 16 }}>คลังโจทย์ตัวอย่าง (ร่างอัตโนมัติ)</h2>
+      <p className="small muted" style={{ margin: 0 }}>{sb.data.available} ข้อ ครบ 23 subtopic × 10 ข้อ สองภาษา (ไทย/อังกฤษ) อ้างอิงระดับแนวทาง ASH / ISTH / WHO / EBMT และตำรามาตรฐาน เป็นต้นร่างให้อาจารย์รายวิชาแก้ไข ถอน หรือรีวิว ไม่ใช่ข้อสอบที่ผ่านการรับรองของสถาบัน</p>
+      {sb.data.imported ? <p className="small" style={{ margin: 0 }}>นำเข้าแล้ว: {Object.entries(sb.data.counts).map(([k, v]) => `${k} ${v}`).join(" · ")}</p> : (
+        <div className="row">
+          <button type="button" className="btn" onClick={() => imp("draft")}>นำเข้าเป็น Draft (อาจารย์ตรวจก่อน)</button>
+          <button type="button" className="btn primary" onClick={() => imp("approved")}>นำเข้าเป็น Approved (ทดลอง/นำร่อง)</button>
+        </div>
       )}
     </section>
   );

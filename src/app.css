@@ -53,3 +53,5 @@ input[type=email],input[type=password],input[type=number],input[type=date],input
 .note-card:hover{border-color:var(--fg-3)}
 .cert{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--good-soft);color:var(--good)}
 .codes{font-family:var(--mono);font-size:13px;white-space:pre;background:var(--sunk);border-radius:8px;padding:10px;max-height:240px;overflow:auto}
+.lang-switch button{min-height:30px;padding:0 10px;font-size:13px}
+.origin-pill{background:var(--info-soft);color:var(--info)}

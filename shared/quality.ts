@@ -5,6 +5,14 @@ export interface QualityCheck { id: string; label: string; ok: boolean; blocking
 
 const filled = (s: string | undefined | null) => !!s && s.trim().length > 0;
 
+/** An English version is fine when absent, or when every field is filled. Half-translated items warn. */
+function enOk(en: ItemInput["i18n"] extends { en?: infer E } | undefined ? E | undefined : never): boolean {
+  if (!en) return true;
+  const started = filled(en.vignette) || filled(en.leadIn) || filled(en.explanation) || (en.options ?? []).some((o) => filled(o.text) || filled(o.rationale));
+  if (!started) return true;
+  return filled(en.vignette) && filled(en.leadIn) && filled(en.explanation) && (en.options ?? []).length === 5 && en.options.every((o) => filled(o.text) && filled(o.rationale));
+}
+
 /** Same checks run in the editor (live) and on the server (on submit). */
 export function qualityChecks(it: ItemInput): QualityCheck[] {
   const opts = it.options ?? [];
@@ -22,6 +30,7 @@ export function qualityChecks(it: ItemInput): QualityCheck[] {
     { id: "reference", label: "มีเอกสารอ้างอิง", ok: filled(it.reference), blocking: true },
     { id: "notlongest", label: "คำตอบที่ถูกไม่ใช่ตัวเลือกที่ยาวที่สุดอย่างเห็นได้ชัด", ok: !correct || texts.length < 5 || correct.text.trim().length < longest || texts.filter((t) => t.length === longest).length > 1, blocking: false },
     { id: "nodup", label: "ไม่มีตัวเลือกซ้ำกัน", ok: new Set(nonEmpty).size === nonEmpty.length, blocking: false },
+    { id: "en", label: "ฉบับภาษาอังกฤษครบ (ถ้าเริ่มแปลแล้ว)", ok: enOk(it.i18n?.en), blocking: false },
   ];
 }
 

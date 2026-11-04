@@ -7,7 +7,7 @@ import { NotesAuthoring } from "./NotesAuthoring";
 import { Field, ItemPreview, Loading, StatusPill, Tabs, errText, useLoad, useToast, subName, ago, fmtDate } from "../ui";
 
 type Tab = "bank" | "edit" | "review" | "reports" | "coverage" | "notes";
-interface Row { id: string; topic: string; subtopic: string; level: string; leadIn: string; status: string; version: number; authorName: string | null; updatedAt: string; n: number; p: number | null; openReports: number }
+interface Row { id: string; topic: string; subtopic: string; level: string; leadIn: string; status: string; version: number; authorName: string | null; updatedAt: string; n: number; p: number | null; openReports: number; origin?: "faculty" | "sample_bank"; hasEn?: boolean }
 
 export function FacultyApp({ me }: { me: Me }) {
   const [tab, setTab] = useState<Tab>("bank");
@@ -41,6 +41,7 @@ function Bank({ me, selected, setSelected, onEdit }: { me: Me; selected: string 
   const [status, setStatus] = useState("");
   const [topic, setTopic] = useState("");
   const [q, setQ] = useState("");
+  const [origin, setOrigin] = useState<"" | "faculty" | "sample_bank">("");
   const list = useLoad<{ items: Row[]; counts: Record<string, number> }>(
     () => get(`/api/faculty/items?${new URLSearchParams({ ...(status && { status }), ...(topic && { topic }), ...(q && { q }) })}`), [status, topic, q]);
   return (
@@ -55,14 +56,18 @@ function Bank({ me, selected, setSelected, onEdit }: { me: Me; selected: string 
             <option value="">ทุก Topic</option>
             {TOPICS.map((t) => <option key={t.code} value={t.code}>{t.code} {t.name}</option>)}
           </select>
+          <select aria-label="ที่มา" value={origin} onChange={(e) => setOrigin(e.target.value as typeof origin)}>
+            <option value="">ทุกที่มา</option><option value="faculty">อาจารย์เขียน</option><option value="sample_bank">คลังโจทย์ตัวอย่าง (ร่างอัตโนมัติ)</option>
+          </select>
           <input type="search" aria-label="ค้นหา" placeholder="ค้นหารหัสหรือข้อความ" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         {!list.data ? <Loading error={list.error} /> : !list.data.items.length ? <div className="empty">ไม่พบข้อสอบ</div> : (
           <div className="tbl-wrap"><table className="tbl">
             <thead><tr><th>รหัส</th><th>Topic</th><th>คำถาม</th><th>สถานะ</th><th title="สัดส่วนตอบถูก (เวอร์ชันปัจจุบัน)">p</th></tr></thead>
-            <tbody>{list.data.items.map((r) => (
+            <tbody>{list.data.items.filter((r) => !origin || (r.origin ?? "faculty") === origin).map((r) => (
               <tr key={r.id} className={selected === r.id ? "sel" : ""}>
-                <td><button type="button" className="linkbtn mono" onClick={() => setSelected(r.id)}>{r.id}</button>{r.version > 1 && <span className="small muted"> v{r.version}</span>}</td>
+                <td><button type="button" className="linkbtn mono" onClick={() => setSelected(r.id)}>{r.id}</button>{r.version > 1 && <span className="small muted"> v{r.version}</span>}
+                  <div className="row" style={{ gap: 4 }}>{r.origin === "sample_bank" && <span className="pill origin-pill" title="ร่างอัตโนมัติ ต้องตรวจโดยอาจารย์">ตัวอย่าง</span>}{r.hasEn && <span className="pill st-draft" title="มีฉบับภาษาอังกฤษ">EN</span>}</div></td>
                 <td><span className="code">{r.topic}</span></td>
                 <td className="small">{r.leadIn || <span className="muted">(ยังไม่มี lead-in)</span>}{r.openReports > 0 && <span className="flag" style={{ marginLeft: 6 }}>รายงาน {r.openReports}</span>}</td>
                 <td><StatusPill status={r.status} /></td>
@@ -81,6 +86,7 @@ function Bank({ me, selected, setSelected, onEdit }: { me: Me; selected: string 
 
 function ItemDetail({ id, me, onEdit, onChanged, onDeleted }: { id: string; me: Me; onEdit: (it: Item) => void; onChanged: () => void; onDeleted: () => void }) {
   const toast = useToast();
+  const [viewEn, setViewEn] = useState(false);
   const d = useLoad<any>(() => get(`/api/faculty/items/${id}`), [id]);
   if (!d.data) return <Loading error={d.error} />;
   const { item, checks, stats, reviews, reports } = d.data;
@@ -109,8 +115,12 @@ function ItemDetail({ id, me, onEdit, onChanged, onDeleted }: { id: string; me: 
           )}
         </div>
       </div>
+      {item.origin === "sample_bank" && <div className="note small"><strong>โจทย์จากคลังตัวอย่าง (ร่างอัตโนมัติ)</strong> — เขียนโดยระบบเพื่อใช้ทดลองและเป็นต้นร่าง อ้างอิงระดับแนวทาง/ตำรา อาจารย์ควรตรวจความถูกต้องและเติมเลขหน้า/ฉบับก่อนใช้จริง แก้ไขได้ด้วย “แก้ไขเป็นเวอร์ชันใหม่” หรือถอนออก</div>}
       <p className="small muted" style={{ margin: 0 }}>ผู้เขียน {item.authorName ?? "—"}{item.lastEditedByName && item.lastEditedByName !== item.authorName ? ` · แก้ไขล่าสุดโดย ${item.lastEditedByName}` : ""} · ปรับปรุง {ago(item.updatedAt)}</p>
-      <ItemPreview item={item} />
+      {item.i18n?.en && <div className="row"><span className="small muted">แสดง:</span>
+        <button type="button" className="chip" aria-pressed={!viewEn} onClick={() => setViewEn(false)}>ไทย</button>
+        <button type="button" className="chip" aria-pressed={viewEn} onClick={() => setViewEn(true)}>English</button></div>}
+      <ItemPreview item={viewEn && item.i18n?.en ? { ...item, vignette: item.i18n.en.vignette, leadIn: item.i18n.en.leadIn, options: item.i18n.en.options, explanation: item.i18n.en.explanation } : item} />
       {item.status === "draft" && <Checks checks={checks} />}
       <section className="stack" aria-label="สถิติ">
         <h3 style={{ fontSize: 15 }}>สถิติเวอร์ชันปัจจุบัน (ครั้งแรกของผู้เรียนแต่ละคน)</h3>
@@ -172,8 +182,12 @@ function Editor({ initial, onSaved }: { initial: Item | null; onSaved: (it: Item
   const [f, setF] = useState<ItemInput>(() => initial ? {
     topic: initial.topic, subtopic: initial.subtopic, level: initial.level, vignette: initial.vignette, labs: initial.labs, leadIn: initial.leadIn,
     options: KEYS.map((k) => initial.options.find((o) => o.key === k) ?? { key: k, text: "", rationale: "" }), correctKey: initial.correctKey,
-    explanation: initial.explanation, reference: initial.reference,
+    explanation: initial.explanation, reference: initial.reference, i18n: initial.i18n ?? {},
   } : emptyItem());
+  const [showEn, setShowEn] = useState<boolean>(() => !!initial?.i18n?.en);
+  const en = f.i18n?.en ?? { vignette: "", leadIn: "", options: KEYS.map((key) => ({ key, text: "", rationale: "" })), explanation: "" };
+  const setEn = (patch: Partial<typeof en>) => setF((x) => ({ ...x, i18n: { en: { ...en, ...patch } } }));
+  const setEnOpt = (i: number, k: "text" | "rationale", v: string) => setEn({ options: en.options.map((o, j) => (j === i ? { ...o, [k]: v } : o)) });
   const [base, setBase] = useState<Item | null>(initial);
   const [busy, setBusy] = useState(false);
   const checks = useMemo(() => qualityChecks(f), [f]);
@@ -240,7 +254,28 @@ function Editor({ initial, onSaved }: { initial: Item | null; onSaved: (it: Item
           ))}
         </fieldset>
         <Field label="คำอธิบายเฉลย"><textarea rows={3} value={f.explanation} onChange={(e) => set("explanation", e.target.value)} /></Field>
-        <Field label="เอกสารอ้างอิง"><input type="text" value={f.reference} onChange={(e) => set("reference", e.target.value)} /></Field>
+        <Field label="เอกสารอ้างอิง" hint="ระบุแนวทางเวชปฏิบัติ (เช่น ASH, ISTH, WHO) หรือตำรามาตรฐานฉบับล่าสุด พร้อมปี/ฉบับ"><input type="text" value={f.reference} onChange={(e) => set("reference", e.target.value)} /></Field>
+        <div className="stack" style={{ gap: 8, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
+          <div className="row-between">
+            <div><strong style={{ fontSize: 14 }}>ฉบับภาษาอังกฤษ (ไม่บังคับ)</strong><p className="small muted" style={{ margin: 0 }}>ผู้เรียนสลับภาษาได้ก่อนเริ่มฝึกเมื่อข้อนี้มีฉบับอังกฤษครบ ค่าแล็บใช้ร่วมกัน</p></div>
+            <button type="button" className="btn small" onClick={() => setShowEn(!showEn)}>{showEn ? "ซ่อน" : "เพิ่มฉบับอังกฤษ"}</button>
+          </div>
+          {showEn && (
+            <>
+              <Field label="Clinical vignette (EN)"><textarea rows={3} value={en.vignette} onChange={(e) => setEn({ vignette: e.target.value })} /></Field>
+              <Field label="Lead-in (EN)"><input type="text" value={en.leadIn} onChange={(e) => setEn({ leadIn: e.target.value })} /></Field>
+              {en.options.map((o, i) => (
+                <div key={o.key} className="optedit">
+                  <span className="radio" style={{ color: "var(--fg-3)" }}>{o.key}</span>
+                  <input type="text" aria-label={`Option ${o.key} (EN)`} placeholder={`Option ${o.key}`} value={o.text} onChange={(e) => setEnOpt(i, "text", e.target.value)} />
+                  <span />
+                  <input type="text" aria-label={`Rationale ${o.key} (EN)`} placeholder="Rationale" value={o.rationale} onChange={(e) => setEnOpt(i, "rationale", e.target.value)} />
+                </div>
+              ))}
+              <Field label="Explanation (EN)"><textarea rows={3} value={en.explanation} onChange={(e) => setEn({ explanation: e.target.value })} /></Field>
+            </>
+          )}
+        </div>
       </section>
       <aside className="stack" style={{ position: "sticky", top: 76 }}>
         <section className="panel stack">

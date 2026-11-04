@@ -173,7 +173,7 @@ function PasswordScreen({ me, onDone, forced, onCancel }: { me: MeX; onDone: (m:
 }
 
 function SetupScreen({ onDone, enabled }: { onDone: () => void; enabled: boolean }) {
-  const [f, setF] = useState({ token: "", schoolName: "", displayName: "", email: "", password: "", demo: false });
+  const [f, setF] = useState({ token: "", schoolName: "", displayName: "", email: "", password: "", demo: false, sampleBank: "draft" as "none" | "draft" | "approved" });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [demo, setDemo] = useState<{ role: string; name: string; email: string; tempPassword: string }[] | null>(null);
@@ -183,7 +183,7 @@ function SetupScreen({ onDone, enabled }: { onDone: () => void; enabled: boolean
     setBusy(true); setErr(null);
     try {
       const r = await api<{ demoAccounts: typeof demo }>("POST", "/api/setup",
-        { email: f.email, displayName: f.displayName, password: f.password, schoolName: f.schoolName || undefined, demo: f.demo }, { "x-setup-token": f.token });
+        { email: f.email, displayName: f.displayName, password: f.password, schoolName: f.schoolName || undefined, demo: f.demo, sampleBank: f.demo ? "none" : f.sampleBank }, { "x-setup-token": f.token });
       if (r.demoAccounts?.length) setDemo(r.demoAccounts); else onDone();
     } catch (x) { setErr(errText(x)); } finally { setBusy(false); }
   }
@@ -205,7 +205,16 @@ function SetupScreen({ onDone, enabled }: { onDone: () => void; enabled: boolean
         <Field label="ชื่อผู้ดูแลระบบ"><input type="text" required value={f.displayName} onChange={set("displayName")} /></Field>
         <Field label="อีเมล"><input type="email" required autoComplete="username" value={f.email} onChange={set("email")} /></Field>
         <Field label="รหัสผ่าน" hint="อย่างน้อย 10 ตัวอักษร"><input type="password" required minLength={10} autoComplete="new-password" value={f.password} onChange={set("password")} /></Field>
-        <label className="check"><input type="checkbox" checked={f.demo} onChange={set("demo")} /> ใส่ข้อมูลตัวอย่าง (โจทย์ 16 ข้อ อาจารย์ 3 คน ผู้เรียน 6 คน) สำหรับทดลองระบบ</label>
+        <label className="check"><input type="checkbox" checked={f.demo} onChange={set("demo")} /> ใส่ข้อมูลตัวอย่าง (บัญชีอาจารย์/ผู้เรียน, โจทย์ 16 ข้อ + คลังตัวอย่าง 230 ข้อ, สรุป 3 เรื่อง) สำหรับทดลองระบบ</label>
+        {!f.demo && (
+          <Field label="คลังโจทย์ตัวอย่าง 230 ข้อ (ร่างอัตโนมัติ สองภาษา)" hint="เป็นต้นร่างให้อาจารย์ตรวจ แก้ไข หรือถอน นำเข้าภายหลังได้ที่หน้าตั้งค่า">
+            <select value={f.sampleBank} onChange={(e) => setF({ ...f, sampleBank: e.target.value as typeof f.sampleBank })}>
+              <option value="draft">นำเข้าเป็น Draft ให้อาจารย์ตรวจก่อน</option>
+              <option value="approved">นำเข้าเป็น Approved ทันที (ทดลอง/นำร่อง)</option>
+              <option value="none">ไม่นำเข้า</option>
+            </select>
+          </Field>
+        )}
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn primary" disabled={busy}>{busy ? "กำลังสร้าง…" : "สร้างระบบ"}</button>
       </form>

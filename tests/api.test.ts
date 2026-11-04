@@ -137,7 +137,7 @@ describe("learner loop", () => {
     const s = (await l1.get("/api/learner/summary")).body;
     expect(s.mastery).toHaveLength(6);
     expect(s.answeredItems).toBe(9);
-    expect(s.poolSize).toBe(14);
+    expect(s.poolSize).toBe(244); // 14 demo + 230 sample bank
     expect(s.notes).toHaveLength(1);
     expect(s.notes[0].body).toMatch(/smear/);
     expect(JSON.stringify(s)).not.toMatch(/บันทึกภายในทีม/);
@@ -215,10 +215,10 @@ describe("faculty authoring and review", () => {
   });
 
   it("puts approved items in the learner pool, and versions revisions", async () => {
-    expect((await l1.get("/api/learner/summary")).body.poolSize).toBe(15);
+    expect((await l1.get("/api/learner/summary")).body.poolSize).toBe(245);
     const rev = await author.post(`/api/faculty/items/${id}/revise`);
     expect(rev.body.item).toMatchObject({ status: "draft", version: 2 });
-    expect((await l1.get("/api/learner/summary")).body.poolSize).toBe(14);
+    expect((await l1.get("/api/learner/summary")).body.poolSize).toBe(244);
   });
 
   it("closes learner reports without revealing who reported", async () => {
@@ -236,7 +236,7 @@ describe("faculty authoring and review", () => {
     const cov = (await author.get("/api/faculty/coverage")).body.topics;
     expect(cov).toHaveLength(6);
     const t1 = cov[0].subs.find((s: { code: string }) => s.code === "t1.hematopoiesis");
-    expect(t1.approved).toBe(1);
+    expect(t1.approved).toBe(11); // 1 demo + 10 sample bank
   });
 });
 
@@ -280,7 +280,7 @@ describe("school admin", () => {
   it("shows an overview", async () => {
     const o = (await admin.get("/api/admin/overview")).body;
     expect(o.roles.learner).toBe(7);
-    expect(o.items.approved).toBe(14);
+    expect(o.items.approved).toBe(244);
     expect(o.cohorts).toHaveLength(1);
     expect(o.learnersWithoutAdvisor).toBe(0);
   });
@@ -312,18 +312,18 @@ describe("school admin", () => {
 describe("adaptive selection", () => {
   it("works through new items, then wrong ones, then repeats", async () => {
     const seen = new Set<string>();
-    let modes: string[] = [];
-    for (let i = 0; i < 12; i++) {
-      const r = (await l1.get("/api/learner/next?skip=1")).body;
+    const modes: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      const r = (await l1.get("/api/learner/next?topic=T5&skip=1")).body;
       modes.push(r.mode);
       if (!r.question) break;
       seen.add(r.question.id);
       await l1.post("/api/learner/answer", { itemId: r.question.id, choice: "A" });
     }
     expect(modes[0]).toBe("new");
-    expect(modes).toContain("review");
+    expect(modes).toContain("review"); // T5 pool (12 items) exhausted, then wrong ones come back
     const s = (await l1.get("/api/learner/summary")).body;
-    expect(s.answeredItems).toBe(14);
+    expect(s.answeredItems).toBeGreaterThanOrEqual(12);
     expect(s.streak).toBeGreaterThanOrEqual(1);
     const wrongOnly = (await l1.get("/api/learner/history?filter=wrong")).body.rows;
     expect(wrongOnly.every((r: { correct: boolean }) => !r.correct)).toBe(true);

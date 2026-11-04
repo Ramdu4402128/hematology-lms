@@ -4,14 +4,14 @@ import { getThresholds } from "../context";
 import { one, type Db } from "../db";
 import { readBody, notFound, conflict, bad } from "../http";
 import { latestAttempts, masteryFrom, overallPct, streakDays, subtopicMastery } from "../analytics";
-import { getItem } from "../items";
+import { getItem, localized, langsOf } from "../items";
 import { getEntitlements, hasFeature, requireFeature, updateReviewCard } from "../entitlements";
 import { KEYS, TOPICS, REPORT_REASONS } from "../../shared/taxonomy";
-import type { AnswerResult, LearnerQuestion } from "../../shared/types";
+import type { AnswerResult, LearnerQuestion, Lang } from "../../shared/types";
 
 const LEADERBOARD_WINDOW_DAYS = 28;
 
-const answerSchema = z.object({ itemId: z.string().max(20), choice: z.enum(KEYS) });
+const answerSchema = z.object({ itemId: z.string().max(20), choice: z.enum(KEYS), lang: z.enum(["th", "en"]).default("th") });
 const reportSchema = z.object({
   reason: z.enum(Object.keys(REPORT_REASONS) as [string, ...string[]]),
   detail: z.string().trim().max(2000).default(""),
@@ -19,10 +19,13 @@ const reportSchema = z.object({
 
 const pick = <T>(xs: T[]): T => xs[Math.floor(Math.random() * xs.length)];
 
-function toQuestion(it: NonNullable<Awaited<ReturnType<typeof getItem>>>): LearnerQuestion {
+const langOf = (url: URL): Lang => (url.searchParams.get("lang") === "en" ? "en" : "th");
+
+function toQuestion(it: NonNullable<Awaited<ReturnType<typeof getItem>>>, lang: Lang = "th"): LearnerQuestion {
+  const t = localized(it, lang);
   return {
-    id: it.id, version: it.version, topic: it.topic, subtopic: it.subtopic, level: it.level, vignette: it.vignette,
-    labs: it.labs, leadIn: it.leadIn, options: it.options.map((o) => ({ key: o.key, text: o.text })),
+    id: it.id, lang: t.lang, langs: langsOf(it), version: it.version, topic: it.topic, subtopic: it.subtopic, level: it.level,
+    vignette: t.vignette, labs: it.labs, leadIn: t.leadIn, options: t.options.map((o) => ({ key: o.key, text: o.text })),
   };
 }
 
@@ -35,7 +38,7 @@ async function notebookCounts(db: Db, userId: string, now: Date) {
 }
 
 /** Serves the next due card from the review notebook (Plus). */
-async function serveNotebook(ctx: Ctx, userId: string, skip: boolean) {
+async function serveNotebook(ctx: Ctx, userId: string, skip: boolean, lang: Lang) {
   const now = ctx.now();
   await requireFeature(ctx.db, userId, "review.notebook", now);
   const due = await ctx.db.query<{ item_id: string }>(
@@ -51,7 +54,7 @@ async function serveNotebook(ctx: Ctx, userId: string, skip: boolean) {
     `INSERT INTO pending_questions (user_id, item_id, version, served_at) VALUES ($1, $2, $3, $4)
      ON CONFLICT (user_id) DO UPDATE SET item_id = EXCLUDED.item_id, version = EXCLUDED.version, served_at = EXCLUDED.served_at`,
     [userId, it!.id, it!.version, now.toISOString()]);
-  return { question: toQuestion(it!), mode: "notebook", dueCount: due.length };
+  return { question: toQuestion(it!, lang), mode: "notebook", dueCount: due.length };
 }
 
 export const learnerRoutes: Route[] = [
@@ -62,14 +65,15 @@ export const learnerRoutes: Route[] = [
       const topicParam = url.searchParams.get("topic");
       const topic = topicParam && TOPICS.some((t) => t.code === topicParam) ? topicParam : null;
       const skip = url.searchParams.get("skip") === "1";
-      if (url.searchParams.get("mode") === "notebook") return serveNotebook(ctx, user.id, skip);
+      const lang = langOf(url);
+      if (url.searchParams.get("mode") === "notebook") return serveNotebook(ctx, user.id, skip, lang);
 
       // Re-serve the open question (page refresh shouldn't hand out a fresh one) unless the learner skips it.
       const pending = await one<{ item_id: string; topic: string; status: string }>(db,
         `SELECT p.item_id, i.topic, i.status FROM pending_questions p JOIN items i ON i.id = p.item_id WHERE p.user_id = $1`, [user.id]);
       if (pending && !skip && pending.status === "approved" && (!topic || pending.topic === topic)) {
         const it = await getItem(db, pending.item_id);
-        return { question: toQuestion(it!), mode: "resume" };
+        return { question: toQuestion(it!, lang), mode: "resume" };
       }
 
       const pool = await db.query<{ id: string; topic: string }>(
@@ -109,7 +113,7 @@ export const learnerRoutes: Route[] = [
          ON CONFLICT (user_id) DO UPDATE SET item_id = EXCLUDED.item_id, version = EXCLUDED.version, served_at = EXCLUDED.served_at`,
         [user.id, it!.id, it!.version, ctx.now().toISOString()]);
       const remainingNew = pool.filter((i) => !answered.has(i.id)).length;
-      return { question: toQuestion(it!), mode, remainingNew };
+      return { question: toQuestion(it!, lang), mode, remainingNew };
     },
   },
   {
@@ -134,8 +138,9 @@ export const learnerRoutes: Route[] = [
             WHERE r.item_id = $1 AND r.version = $2 AND r.decision = 'approve' ORDER BY r.created_at DESC LIMIT 1`, [it.id, it.version]);
         const note = await one<{ id: string; title: string }>(db,
           `SELECT id, title FROM review_notes WHERE subtopic = $1 AND status = 'published' ORDER BY free_access DESC, id LIMIT 1`, [it.subtopic]);
+        const t = localized(it, b.lang);
         const res: AnswerResult = {
-          correct, correctKey: it.correctKey, choice: b.choice, options: it.options, explanation: it.explanation, reference: it.reference,
+          correct, correctKey: it.correctKey, choice: b.choice, options: t.options, explanation: t.explanation, reference: it.reference, lang: t.lang,
           reviewedBy: cert?.reviewer ?? null, reviewedAt: cert ? new Date(cert.created_at).toISOString() : null,
           relatedNote: note ? { id: note.id, title: note.title } : null,
         };
@@ -235,15 +240,17 @@ export const learnerRoutes: Route[] = [
   },
   {
     method: "GET", path: "/api/learner/items/:id", access: ["learner"],
-    async handler({ params, ctx, user }) {
+    async handler({ params, url, ctx, user }) {
       const mine = await ctx.db.query<{ choice: string; is_correct: boolean; created_at: Date }>(
         `SELECT choice, is_correct, created_at FROM attempts WHERE user_id = $1 AND item_id = $2 ORDER BY created_at DESC`, [user.id, params.id]);
       // The key and rationales are released only for items this learner has already answered.
       if (!mine.length) throw notFound();
       const it = await getItem(ctx.db, params.id);
       if (!it) throw notFound();
+      const lang = langOf(url);
+      const t = localized(it, lang);
       return {
-        item: { ...toQuestion(it), options: it.options, correctKey: it.correctKey, explanation: it.explanation, reference: it.reference, status: it.status },
+        item: { ...toQuestion(it, lang), options: t.options, correctKey: it.correctKey, explanation: t.explanation, reference: it.reference, status: it.status },
         attempts: mine.map((a) => ({ choice: a.choice, correct: a.is_correct, at: new Date(a.created_at).toISOString() })),
       };
     },

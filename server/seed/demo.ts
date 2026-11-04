@@ -5,6 +5,7 @@ import { RUBRIC } from "../../shared/taxonomy";
 import type { Lab, Option } from "../../shared/types";
 import demoItems from "./demo-items.json";
 import { DEMO_NOTES } from "./demo-notes";
+import { seedSampleBank } from "./sample-bank";
 
 interface DemoItem {
   id: string; topic: string; subtopic: string; level: string; vignette: string; labs: Lab[]; leadIn: string;
@@ -112,5 +113,7 @@ export async function seedDemo(db: Db, now: Date, emailDomain = "demo.example.or
       [`NOTE-${String(i + 1).padStart(4, "0")}`, certifier, at]);
   }
   await db.query(`SELECT setval('note_number_seq', $1)`, [DEMO_NOTES.length]);
+  // 230 simulated bilingual items (10 per subtopic), approved for the demo pool and labelled as sample bank.
+  await seedSampleBank(db, now, { authorId: author, reviewerId: reviewer, status: "approved" });
   return accounts;
 }

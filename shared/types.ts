@@ -5,6 +5,10 @@ export interface Lab { test: string; value: string; unit: string; range: string;
 export interface Option { key: string; text: string; rationale: string }
 export type ItemStatus = "draft" | "review" | "approved" | "retired";
 
+/** English rendering of the text fields. Labs are shared. */
+export interface ItemEn { vignette: string; leadIn: string; options: Option[]; explanation: string }
+export type Lang = "th" | "en";
+
 export interface ItemInput {
   topic: string;
   subtopic: string;
@@ -16,6 +20,8 @@ export interface ItemInput {
   correctKey: string;
   explanation: string;
   reference: string;
+  /** Optional translations keyed by language; only "en" today. */
+  i18n?: { en?: ItemEn };
 }
 
 export interface Item extends ItemInput {
@@ -25,11 +31,15 @@ export interface Item extends ItemInput {
   authorId: string | null;
   authorName?: string | null;
   updatedAt: string;
+  origin?: "faculty" | "sample_bank";
 }
 
 /** What a learner sees before answering — no key, no rationales, no explanation. */
 export interface LearnerQuestion {
   id: string;
+  /** Language actually served and the languages this item has. */
+  lang: Lang;
+  langs: Lang[];
   version: number;
   topic: string;
   subtopic: string;
@@ -51,6 +61,7 @@ export interface AnswerResult {
   reviewedBy?: string | null;
   reviewedAt?: string | null;
   relatedNote?: { id: string; title: string } | null;
+  lang?: Lang;
 }
 
 export interface TopicMastery { code: string; n: number; c: number; pct: number | null; enough: boolean }

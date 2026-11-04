@@ -3,7 +3,7 @@ import type { Route } from "../context";
 import { audit } from "../context";
 import { one } from "../db";
 import { readBody, notFound, conflict, forbidden, bad, HttpError } from "../http";
-import { getItem, itemInputSchema, normalizeOptions, inputOf } from "../items";
+import { getItem, itemInputSchema, normalizeOptions, normalizeI18n, inputOf } from "../items";
 import { latestAttempts, overallPct } from "../analytics";
 import { blockingFailures, qualityChecks } from "../../shared/quality";
 import { RUBRIC, TOPICS, KEYS } from "../../shared/taxonomy";
@@ -53,7 +53,8 @@ export const facultyRoutes: Route[] = [
       const topic = url.searchParams.get("topic");
       const q = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
       const rows = await ctx.db.query<Record<string, unknown>>(
-        `SELECT i.id, i.topic, i.subtopic, i.level, i.lead_in, i.status, i.version, i.author_id, au.display_name AS author_name, i.updated_at,
+        `SELECT i.id, i.topic, i.subtopic, i.level, i.lead_in, i.status, i.version, i.author_id, au.display_name AS author_name, i.updated_at, i.origin,
+                (i.i18n ? 'en') AS has_en,
                 (SELECT count(*) FROM attempts a WHERE a.item_id = i.id AND a.item_version = i.version) AS n,
                 (SELECT count(*) FROM attempts a WHERE a.item_id = i.id AND a.item_version = i.version AND a.is_correct) AS c,
                 (SELECT count(*) FROM item_reports r WHERE r.item_id = i.id AND r.status = 'open') AS open_reports
@@ -65,7 +66,7 @@ export const facultyRoutes: Route[] = [
       return {
         items: rows.map((r) => ({
           id: r.id, topic: r.topic, subtopic: r.subtopic, level: r.level, leadIn: r.lead_in, status: r.status, version: r.version,
-          authorId: r.author_id, authorName: r.author_name, updatedAt: new Date(r.updated_at as string).toISOString(),
+          authorId: r.author_id, authorName: r.author_name, updatedAt: new Date(r.updated_at as string).toISOString(), origin: r.origin, hasEn: !!r.has_en,
           n: Number(r.n), p: Number(r.n) ? Math.round((Number(r.c) / Number(r.n)) * 100) / 100 : null, openReports: Number(r.open_reports),
         })),
         counts: Object.fromEntries(counts.map((c) => [c.status, Number(c.n)])),
@@ -99,10 +100,10 @@ export const facultyRoutes: Route[] = [
       const { item } = await readBody(req, saveSchema);
       const id = await nextItemId(ctx.db);
       await ctx.db.query(
-        `INSERT INTO items (id, topic, subtopic, level, vignette, labs, lead_in, options, correct_key, explanation, reference, status, version, author_id, last_edited_by, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8::jsonb,$9,$10,$11,'draft',1,$12,$12,$13,$13)`,
+        `INSERT INTO items (id, topic, subtopic, level, vignette, labs, lead_in, options, correct_key, explanation, reference, status, version, author_id, last_edited_by, created_at, updated_at, i18n)
+         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8::jsonb,$9,$10,$11,'draft',1,$12,$12,$13,$13,$14::jsonb)`,
         [id, item.topic, item.subtopic, item.level, item.vignette, JSON.stringify(item.labs), item.leadIn,
-          JSON.stringify(normalizeOptions(item.options)), item.correctKey, item.explanation, item.reference, user.id, ctx.now().toISOString()]);
+          JSON.stringify(normalizeOptions(item.options)), item.correctKey, item.explanation, item.reference, user.id, ctx.now().toISOString(), JSON.stringify(normalizeI18n(item.i18n))]);
       await audit(ctx.db, user.id, "item.create", id);
       return { item: await getItem(ctx.db, id) };
     },
@@ -120,9 +121,9 @@ export const facultyRoutes: Route[] = [
         }
         await db.query(
           `UPDATE items SET topic=$2, subtopic=$3, level=$4, vignette=$5, labs=$6::jsonb, lead_in=$7, options=$8::jsonb, correct_key=$9,
-                  explanation=$10, reference=$11, last_edited_by=$12, updated_at=$13 WHERE id=$1`,
+                  explanation=$10, reference=$11, last_edited_by=$12, updated_at=$13, i18n=$14::jsonb WHERE id=$1`,
           [params.id, item.topic, item.subtopic, item.level, item.vignette, JSON.stringify(item.labs), item.leadIn,
-            JSON.stringify(normalizeOptions(item.options)), item.correctKey, item.explanation, item.reference, user.id, ctx.now().toISOString()]);
+            JSON.stringify(normalizeOptions(item.options)), item.correctKey, item.explanation, item.reference, user.id, ctx.now().toISOString(), JSON.stringify(normalizeI18n(item.i18n))]);
         return { item: await getItem(db, params.id) };
       });
     },
