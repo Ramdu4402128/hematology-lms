@@ -69,9 +69,6 @@ export const advisorRoutes: Route[] = [
       const rows = await latestAttempts(ctx.db, [learner.id]);
       const mastery = masteryFrom(rows, s);
       const la = (await lastActiveMap(ctx.db, [learner.id])).get(learner.id) ?? null;
-      const recent = await ctx.db.query<{ item_id: string; topic: string; subtopic: string; lead_in: string; choice: string; is_correct: boolean; created_at: Date; correct_key: string }>(
-        `SELECT a.item_id, i.topic, i.subtopic, i.lead_in, a.choice, a.is_correct, a.created_at, i.correct_key
-           FROM attempts a JOIN items i ON i.id = a.item_id WHERE a.user_id = $1 ORDER BY a.created_at DESC LIMIT 30`, [learner.id]);
       const activity = await ctx.db.query<{ day: string; n: string }>(
         `SELECT to_char((created_at AT TIME ZONE 'UTC') + interval '7 hours', 'YYYY-MM-DD') AS day, count(*) AS n
            FROM attempts WHERE user_id = $1 AND created_at > $2::timestamptz - interval '28 days' GROUP BY 1 ORDER BY 1`, [learner.id, ctx.now().toISOString()]);
@@ -79,13 +76,13 @@ export const advisorRoutes: Route[] = [
         `SELECT n.id, n.visibility, n.body, n.created_at, u.display_name AS author, n.author_id
            FROM feedback_notes n LEFT JOIN users u ON u.id = n.author_id WHERE n.learner_id = $1 ORDER BY n.created_at DESC`, [learner.id]);
       const medians = learner.cohort_id ? (await cohortMedians(ctx, [learner.cohort_id], s))[learner.cohort_id] : null;
+      // Advisors see summaries by topic/subtopic only, never individual item responses (design decision).
       return {
         settings: s,
         learner: { id: learner.id, name: learner.display_name, email: learner.email, track: learner.track ?? "", cohortName: learner.cohort_name },
         mastery, cohortMedian: medians, subtopics: subtopicMastery(rows), overall: overallPct(rows), answered: rows.length,
         lastActive: la?.toISOString() ?? null, flags: flagsFor(mastery, la, s, ctx.now()),
         activity: activity.map((a) => ({ day: a.day, n: Number(a.n) })),
-        recent: recent.map((r) => ({ itemId: r.item_id, topic: r.topic, subtopic: r.subtopic, leadIn: r.lead_in, choice: r.choice, correctKey: r.correct_key, correct: r.is_correct, at: new Date(r.created_at).toISOString() })),
         notes: notes.map((n) => ({ id: String(n.id), visibility: n.visibility, body: n.body, author: n.author, mine: n.author_id === user.id, at: new Date(n.created_at).toISOString() })),
       };
     },

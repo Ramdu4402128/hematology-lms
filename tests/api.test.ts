@@ -158,7 +158,10 @@ describe("learner loop", () => {
     expect(lb.optedIn).toBe(true);
     expect(lb.cohortName).toMatch(/รอบ 3/);
     expect(lb.participants).toBe(1);
-    expect(lb.entries).toHaveLength(0); // fewer than 10 answered so far
+    expect(lb.entries).toHaveLength(1);
+    expect(lb.entries[0]).toMatchObject({ name: "Pim", isMe: true, rank: 1 });
+    expect(lb.entries[0].activeDays).toBeGreaterThan(1);
+    expect(JSON.stringify(lb)).not.toMatch(/pct/); // ranks consistency, not scores
   });
 
   it("blocks learners from staff areas", async () => {
@@ -257,6 +260,7 @@ describe("advisor", () => {
     await advisor.post(`/api/advisor/learners/${target.id}/notes`, { visibility: "learner", body: "ทำได้ดีมาก ลองฝึก T6 เพิ่ม" });
     const detail = (await advisor.get(`/api/advisor/learners/${target.id}`)).body;
     expect(detail.notes).toHaveLength(2);
+    expect(detail.recent).toBeUndefined(); // topic-level summaries only
     const seen = (await l2.get("/api/learner/summary")).body.notes;
     expect(seen.map((n: { body: string }) => n.body)).toEqual(["ทำได้ดีมาก ลองฝึก T6 เพิ่ม"]);
   });

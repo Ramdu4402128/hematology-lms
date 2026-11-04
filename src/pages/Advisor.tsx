@@ -80,13 +80,7 @@ function LearnerDetail({ id, onChange }: { id: string; onChange: () => void }) {
             <ul className="list-plain small">{weak.map((s: any) => <li key={s.code} className="row-between"><span>{subName(s.code)}</span><span className="mono">{s.pct}% ({s.c}/{s.n})</span></li>)}</ul>
           </div>
         )}
-        <div className="stack" style={{ gap: 6 }}>
-          <h3 style={{ fontSize: 15 }}>คำตอบล่าสุด</h3>
-          <div className="tbl-wrap"><table className="tbl"><thead><tr><th>ข้อ</th><th>Subtopic</th><th>ตอบ</th><th>เมื่อ</th></tr></thead>
-            <tbody>{x.recent.slice(0, 12).map((r: any, i: number) => (
-              <tr key={i}><td className="mono small">{r.itemId}</td><td className="small">{subName(r.subtopic)}</td>
-                <td className="mono small" style={{ color: r.correct ? "var(--good)" : "var(--bad)" }}>{r.choice}{r.correct ? " ✓" : ` ✕ (${r.correctKey})`}</td><td className="small muted">{ago(r.at)}</td></tr>))}</tbody></table></div>
-        </div>
+        <p className="small muted" style={{ margin: 0 }}>อาจารย์ผู้ดูแลเห็นผลระดับ Topic และ subtopic เท่านั้น ไม่เห็นคำตอบรายข้อ</p>
       </section>
       <section className="panel stack">
         <h2 style={{ fontSize: 16 }}>บันทึกและข้อเสนอแนะ</h2>

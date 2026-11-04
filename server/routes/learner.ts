@@ -8,7 +8,7 @@ import { getItem } from "../items";
 import { KEYS, TOPICS, REPORT_REASONS } from "../../shared/taxonomy";
 import type { AnswerResult, LearnerQuestion } from "../../shared/types";
 
-const LEADERBOARD_MIN_ANSWERED = 10;
+const LEADERBOARD_WINDOW_DAYS = 28;
 
 const answerSchema = z.object({ itemId: z.string().max(20), choice: z.enum(KEYS) });
 const reportSchema = z.object({
@@ -117,26 +117,29 @@ export const learnerRoutes: Route[] = [
         `SELECT n.id, n.body, n.created_at, u.display_name AS author FROM feedback_notes n LEFT JOIN users u ON u.id = n.author_id
           WHERE n.learner_id = $1 AND n.visibility = 'learner' ORDER BY n.created_at DESC LIMIT 20`, [user.id]);
 
-      // Leaderboard: opt-in only, and only against opted-in peers in the learner's current cohort.
+      // Leaderboard: opt-in only, against opted-in peers in the learner's current cohort, and it ranks
+      // consistency (days practised in the last 28) rather than scores — the agreed design decision.
       let leaderboard: unknown = { optedIn: user.leaderboardOptIn };
       if (user.leaderboardOptIn) {
         const cohort = await one<{ id: string; name: string }>(db,
           `SELECT c.id, c.name FROM cohort_members m JOIN cohorts c ON c.id = m.cohort_id
             WHERE m.user_id = $1 AND NOT c.archived ORDER BY c.starts_on DESC NULLS LAST, c.created_at DESC LIMIT 1`, [user.id]);
         if (cohort) {
-          const peers = await db.query<{ id: string; name: string }>(
-            `SELECT u.id, COALESCE(u.leaderboard_alias, u.display_name) AS name FROM cohort_members m JOIN users u ON u.id = m.user_id
-              WHERE m.cohort_id = $1 AND u.active AND u.leaderboard_opt_in`, [cohort.id]);
-          const rows = await latestAttempts(db, peers.map((p) => p.id));
-          const entries = peers.map((p) => {
-            const r = rows.filter((x) => x.user_id === p.id);
-            return { name: p.name, isMe: p.id === user.id, answered: r.length, pct: overallPct(r) ?? 0 };
-          }).filter((e) => e.answered >= LEADERBOARD_MIN_ANSWERED)
-            .sort((a, b) => b.pct - a.pct || b.answered - a.answered)
+          const peers = await db.query<{ id: string; name: string; days: string; answered: string }>(
+            `SELECT u.id, COALESCE(u.leaderboard_alias, u.display_name) AS name,
+                    count(DISTINCT to_char((a.created_at AT TIME ZONE 'UTC') + interval '7 hours', 'YYYY-MM-DD')) AS days,
+                    count(a.id) AS answered
+               FROM cohort_members m JOIN users u ON u.id = m.user_id
+               LEFT JOIN attempts a ON a.user_id = u.id AND a.created_at > $2::timestamptz - interval '${LEADERBOARD_WINDOW_DAYS} days'
+              WHERE m.cohort_id = $1 AND u.active AND u.leaderboard_opt_in
+              GROUP BY u.id`, [cohort.id, ctx.now().toISOString()]);
+          const entries = peers.map((p) => ({ name: p.name, isMe: p.id === user.id, activeDays: Number(p.days), answered: Number(p.answered) }))
+            .filter((e) => e.activeDays > 0)
+            .sort((a, b) => b.activeDays - a.activeDays || b.answered - a.answered)
             .map((e, i) => ({ ...e, rank: i + 1 }));
-          leaderboard = { optedIn: true, cohortName: cohort.name, minAnswered: LEADERBOARD_MIN_ANSWERED, entries, participants: peers.length };
+          leaderboard = { optedIn: true, cohortName: cohort.name, windowDays: LEADERBOARD_WINDOW_DAYS, entries, participants: peers.length };
         } else {
-          leaderboard = { optedIn: true, cohortName: null, entries: [], minAnswered: LEADERBOARD_MIN_ANSWERED, participants: 0 };
+          leaderboard = { optedIn: true, cohortName: null, entries: [], windowDays: LEADERBOARD_WINDOW_DAYS, participants: 0 };
         }
       }
       return {

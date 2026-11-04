@@ -9,7 +9,7 @@ interface Summary {
   settings: Settings; mastery: TopicMastery[]; subtopics: { code: string; n: number; c: number; pct: number }[]; overall: number | null;
   answeredItems: number; totalAttempts: number; poolSize: number; streak: number;
   notes: { id: string; body: string; author: string | null; at: string }[];
-  leaderboard: { optedIn: boolean; cohortName?: string | null; minAnswered?: number; participants?: number; entries?: { rank: number; name: string; pct: number; answered: number; isMe: boolean }[] };
+  leaderboard: { optedIn: boolean; cohortName?: string | null; windowDays?: number; participants?: number; entries?: { rank: number; name: string; activeDays: number; answered: number; isMe: boolean }[] };
 }
 
 export function LearnerApp({ me, setMe }: { me: MeX; setMe: (m: MeX) => void }) {
@@ -183,16 +183,16 @@ function Progress({ s }: { s: Summary }) {
           ))}</ul> : <p className="muted small" style={{ margin: 0 }}>ยังไม่มีข้อเสนอแนะ</p>}
         </section>
         <section className="panel stack">
-          <h2 style={{ fontSize: 16 }}>อันดับในรุ่น</h2>
+          <h2 style={{ fontSize: 16 }}>ความสม่ำเสมอในรุ่น</h2>
           {!lb.optedIn ? <p className="small muted" style={{ margin: 0 }}>ไม่ได้เข้าร่วม — เปิดได้ที่แท็บ “ตั้งค่า” จะเห็นเฉพาะเพื่อนร่วมรุ่นที่เลือกเข้าร่วมเช่นกัน</p>
             : !lb.cohortName ? <p className="small muted" style={{ margin: 0 }}>คุณยังไม่ได้อยู่ในรุ่นใด</p>
             : (
               <>
-                <p className="small muted" style={{ margin: 0 }}>{lb.cohortName} · ผู้เข้าร่วม {lb.participants} คน · แสดงเมื่อทำครบ {lb.minAnswered} ข้อ</p>
+                <p className="small muted" style={{ margin: 0 }}>{lb.cohortName} · ผู้เข้าร่วม {lb.participants} คน · นับวันที่ฝึกใน {lb.windowDays} วันล่าสุด ไม่ใช่คะแนน</p>
                 {lb.entries?.length ? <ol className="list-plain">{lb.entries.map((e) => (
                   <li key={e.rank + e.name} className="row-between" style={e.isMe ? { fontWeight: 600 } : undefined}>
-                    <span><span className="mono">{e.rank}.</span> {e.name}{e.isMe ? " (คุณ)" : ""}</span><span className="mono small">{e.pct}% · {e.answered} ข้อ</span>
-                  </li>))}</ol> : <p className="small muted" style={{ margin: 0 }}>ยังไม่มีผู้ทำครบเกณฑ์</p>}
+                    <span><span className="mono">{e.rank}.</span> {e.name}{e.isMe ? " (คุณ)" : ""}</span><span className="mono small">{e.activeDays} วัน · {e.answered} ข้อ</span>
+                  </li>))}</ol> : <p className="small muted" style={{ margin: 0 }}>ยังไม่มีผู้เข้าร่วมที่ฝึกในช่วงนี้</p>}
               </>
             )}
         </section>
@@ -248,10 +248,10 @@ function LearnerSettings({ me, setMe }: { me: MeX; setMe: (m: MeX) => void }) {
   }
   return (
     <section className="panel stack" style={{ maxWidth: 560 }}>
-      <h2 style={{ fontSize: 18 }}>อันดับในรุ่น (สมัครใจ)</h2>
-      <p className="small muted" style={{ margin: 0 }}>เมื่อเข้าร่วม ระบบจะเทียบความถูกต้องรวมของคุณกับเพื่อนร่วมรุ่นที่เข้าร่วมเท่านั้น อาจารย์ผู้ดูแลเห็นผลการฝึกของคุณอยู่แล้วไม่ว่าจะเข้าร่วมหรือไม่</p>
-      <label className="check"><input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} /> เข้าร่วมตารางอันดับในรุ่น</label>
-      <Field label="ชื่อที่แสดงในตารางอันดับ (เว้นว่างเพื่อใช้ชื่อจริง)"><input type="text" maxLength={40} value={alias} onChange={(e) => setAlias(e.target.value)} disabled={!optIn} /></Field>
+      <h2 style={{ fontSize: 18 }}>ตารางความสม่ำเสมอในรุ่น (สมัครใจ)</h2>
+      <p className="small muted" style={{ margin: 0 }}>เมื่อเข้าร่วม ระบบจะเรียงจำนวนวันที่ฝึกใน 28 วันล่าสุด (ไม่ใช่คะแนน) เทียบกับเพื่อนร่วมรุ่นที่เข้าร่วมเท่านั้น อาจารย์ไม่เห็นตารางนี้</p>
+      <label className="check"><input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} /> เข้าร่วมตารางความสม่ำเสมอในรุ่น</label>
+      <Field label="ชื่อที่แสดงในตาราง (เว้นว่างเพื่อใช้ชื่อจริง)"><input type="text" maxLength={40} value={alias} onChange={(e) => setAlias(e.target.value)} disabled={!optIn} /></Field>
       <div><button type="button" className="btn primary" onClick={save}>บันทึก</button></div>
     </section>
   );
