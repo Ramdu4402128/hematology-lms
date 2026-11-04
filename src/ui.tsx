@@ -179,3 +179,29 @@ export function Stat({ label, value, sub }: { label: string; value: ReactNode; s
     </div>
   );
 }
+
+/* ---------- public config (registration, disclaimer) ---------- */
+export interface PublicConfig {
+  registrationOpen: boolean; trialDays: number; disclaimer: { version: string; text: string }; schoolName: string;
+  plus: string[]; free: string[]; learnerLevels: string[]; studyGoals: string[];
+}
+let configPromise: Promise<PublicConfig> | null = null;
+export const loadConfig = (fresh = false) => {
+  if (!configPromise || fresh) configPromise = fetch("/api/public/config", { credentials: "same-origin" }).then((r) => r.json());
+  return configPromise;
+};
+export function usePublicConfig() {
+  const [c, setC] = useState<PublicConfig | null>(null);
+  useEffect(() => { loadConfig().then(setC).catch(() => {}); }, []);
+  return c;
+}
+
+export function Disclaimer() {
+  const c = usePublicConfig();
+  if (!c?.disclaimer.text) return null;
+  return <footer className="disclaimer" aria-label="ข้อความปฏิเสธความรับผิดชอบ"><strong>ข้อจำกัดความรับผิดชอบ:</strong> {c.disclaimer.text}</footer>;
+}
+
+export function PlusBadge({ plus }: { plus: boolean }) {
+  return plus ? <span className="pill plus-pill">Plus</span> : <span className="pill st-draft">ฟรี</span>;
+}

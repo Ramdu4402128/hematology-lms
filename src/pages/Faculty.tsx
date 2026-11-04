@@ -3,9 +3,10 @@ import { get, post, put, del } from "../api";
 import { TOPICS, LEVELS, KEYS, RUBRIC, REPORT_REASONS, STATUS_LABEL } from "../../shared/taxonomy";
 import { qualityChecks } from "../../shared/quality";
 import type { Item, ItemInput, Lab, Me } from "../../shared/types";
+import { NotesAuthoring } from "./NotesAuthoring";
 import { Field, ItemPreview, Loading, StatusPill, Tabs, errText, useLoad, useToast, subName, ago, fmtDate } from "../ui";
 
-type Tab = "bank" | "edit" | "review" | "reports" | "coverage";
+type Tab = "bank" | "edit" | "review" | "reports" | "coverage" | "notes";
 interface Row { id: string; topic: string; subtopic: string; level: string; leadIn: string; status: string; version: number; authorName: string | null; updatedAt: string; n: number; p: number | null; openReports: number }
 
 export function FacultyApp({ me }: { me: Me }) {
@@ -23,6 +24,7 @@ export function FacultyApp({ me }: { me: Me }) {
         { id: "edit", label: editing ? `แก้ไข ${editing.id}` : "เขียนข้อใหม่" },
         { id: "review", label: <>รอรีวิว{reviewable > 0 && <span className="count">{reviewable}</span>}</> },
         { id: "reports", label: <>รายงานจากผู้เรียน{!!reports.data?.reports.length && <span className="count">{reports.data.reports.length}</span>}</> },
+        { id: "notes", label: "สรุปเนื้อหา" },
         { id: "coverage", label: "ความครอบคลุม" },
       ]} />
       {tab === "bank" && <Bank me={me} selected={selected} setSelected={setSelected} onEdit={openEditor} />}
@@ -30,6 +32,7 @@ export function FacultyApp({ me }: { me: Me }) {
       {tab === "review" && <ReviewQueue onDone={queue.reload} />}
       {tab === "reports" && <Reports onOpen={(id) => { setSelected(id); setTab("bank"); }} onChange={reports.reload} />}
       {tab === "coverage" && <Coverage />}
+      {tab === "notes" && <NotesAuthoring />}
     </>
   );
 }

@@ -7,8 +7,10 @@ import { learnerRoutes } from "./routes/learner";
 import { facultyRoutes } from "./routes/faculty";
 import { advisorRoutes } from "./routes/advisor";
 import { adminRoutes } from "./routes/admin";
+import { membershipRoutes, membershipAdminRoutes } from "./routes/membership";
+import { noteRoutes } from "./routes/notes";
 
-const routes: Route[] = [...setupRoutes, ...authRoutes, ...learnerRoutes, ...facultyRoutes, ...advisorRoutes, ...adminRoutes];
+const routes: Route[] = [...setupRoutes, ...authRoutes, ...membershipRoutes, ...learnerRoutes, ...facultyRoutes, ...advisorRoutes, ...adminRoutes, ...membershipAdminRoutes, ...noteRoutes];
 
 interface Compiled { route: Route; re: RegExp; keys: string[] }
 const compiled: Compiled[] = routes.map((route) => {

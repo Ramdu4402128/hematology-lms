@@ -48,8 +48,8 @@ describe("setup", () => {
     const r = await c.call("POST", "/api/setup", { ...ADMIN, displayName: "ผู้ดูแลระบบ", demo: true }, { "x-setup-token": SETUP_TOKEN });
     expect(r.status).toBe(200);
     accounts = r.body.demoAccounts;
-    expect(accounts).toHaveLength(9);
-    expect(new Set(accounts.map((a) => a.tempPassword)).size).toBe(9);
+    expect(accounts).toHaveLength(10);
+    expect(new Set(accounts.map((a) => a.tempPassword)).size).toBe(10);
     const again = await c.call("POST", "/api/setup", { ...ADMIN, displayName: "x", demo: false }, { "x-setup-token": SETUP_TOKEN });
     expect(again.status).toBe(409);
   });

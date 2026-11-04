@@ -23,15 +23,18 @@ export const RUBRIC = [
   "แท็กหัวข้อถูกต้อง",
   "เอกสารอ้างอิงเป็นปัจจุบัน",
 ];
-export const ROLES = ["learner", "advisor", "faculty", "school_admin"] as const;
+export const ROLES = ["learner", "advisor", "faculty", "content_reviewer", "school_admin"] as const;
 export type Role = (typeof ROLES)[number];
 export const ROLE_LABEL: Record<Role, string> = {
   learner: "ผู้เรียน",
   advisor: "อาจารย์ผู้ดูแล",
   faculty: "อาจารย์รายวิชา",
+  content_reviewer: "ผู้รับรองเนื้อหา",
   school_admin: "โรงเรียนแพทย์",
 };
-export const STATUS_LABEL: Record<string, string> = { draft: "Draft", review: "รอรีวิว", approved: "Approved", retired: "Retired" };
+export const STATUS_LABEL: Record<string, string> = { draft: "Draft", review: "รอรีวิว", approved: "Approved", published: "เผยแพร่แล้ว", retired: "Retired" };
+export const LEARNER_LEVELS = ["นักศึกษาแพทย์ปี 4", "นักศึกษาแพทย์ปี 5", "นักศึกษาแพทย์ปี 6", "แพทย์เพิ่มพูนทักษะ", "แพทย์ประจำบ้าน", "แพทย์ประจำบ้านต่อยอด", "แพทย์ / อื่น ๆ"];
+export const STUDY_GOALS = ["NL ขั้นที่ 1", "NL ขั้นที่ 2", "NL ขั้นที่ 3", "สอบวุฒิบัตรอายุรศาสตร์", "สอบวุฒิบัตรโลหิตวิทยา", "ทบทวนความรู้ทั่วไป"];
 export const REPORT_REASONS: Record<string, string> = {
   wrong_key: "เฉลยอาจผิด",
   ambiguous: "โจทย์กำกวม / มีคำตอบได้มากกว่าหนึ่งข้อ",

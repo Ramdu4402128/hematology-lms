@@ -1,10 +1,11 @@
 import { z } from "zod";
-import type { Route } from "../context";
+import type { Route, Ctx } from "../context";
 import { getThresholds } from "../context";
-import { one } from "../db";
+import { one, type Db } from "../db";
 import { readBody, notFound, conflict, bad } from "../http";
 import { latestAttempts, masteryFrom, overallPct, streakDays, subtopicMastery } from "../analytics";
 import { getItem } from "../items";
+import { getEntitlements, hasFeature, requireFeature, updateReviewCard } from "../entitlements";
 import { KEYS, TOPICS, REPORT_REASONS } from "../../shared/taxonomy";
 import type { AnswerResult, LearnerQuestion } from "../../shared/types";
 
@@ -25,6 +26,34 @@ function toQuestion(it: NonNullable<Awaited<ReturnType<typeof getItem>>>): Learn
   };
 }
 
+async function notebookCounts(db: Db, userId: string, now: Date) {
+  const r = await db.query<{ state: string; n: string; due: string }>(
+    `SELECT c.state, count(*) AS n, count(*) FILTER (WHERE c.due_at <= $2 AND c.state <> 'mastered') AS due
+       FROM review_cards c JOIN items i ON i.id = c.item_id WHERE c.user_id = $1 AND i.status <> 'retired' GROUP BY c.state`, [userId, now.toISOString()]);
+  const get = (st: string) => Number(r.find((x) => x.state === st)?.n ?? 0);
+  return { toReview: get("to_review"), recallCheck: get("recall_check"), mastered: get("mastered"), due: r.reduce((a, x) => a + Number(x.due), 0) };
+}
+
+/** Serves the next due card from the review notebook (Plus). */
+async function serveNotebook(ctx: Ctx, userId: string, skip: boolean) {
+  const now = ctx.now();
+  await requireFeature(ctx.db, userId, "review.notebook", now);
+  const due = await ctx.db.query<{ item_id: string }>(
+    `SELECT c.item_id FROM review_cards c JOIN items i ON i.id = c.item_id
+      WHERE c.user_id = $1 AND c.state <> 'mastered' AND c.due_at <= $2 AND i.status = 'approved' ORDER BY c.due_at`, [userId, now.toISOString()]);
+  const pending = await one<{ item_id: string }>(ctx.db, `SELECT item_id FROM pending_questions WHERE user_id = $1`, [userId]);
+  let ids = due.map((d) => d.item_id);
+  if (pending && !skip && ids.includes(pending.item_id)) ids = [pending.item_id];
+  else if (skip && pending && ids.length > 1) ids = ids.filter((x) => x !== pending.item_id);
+  if (!ids.length) return { question: null, mode: "notebook_empty", dueCount: 0 };
+  const it = await getItem(ctx.db, ids[0]);
+  await ctx.db.query(
+    `INSERT INTO pending_questions (user_id, item_id, version, served_at) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (user_id) DO UPDATE SET item_id = EXCLUDED.item_id, version = EXCLUDED.version, served_at = EXCLUDED.served_at`,
+    [userId, it!.id, it!.version, now.toISOString()]);
+  return { question: toQuestion(it!), mode: "notebook", dueCount: due.length };
+}
+
 export const learnerRoutes: Route[] = [
   {
     method: "GET", path: "/api/learner/next", access: ["learner"],
@@ -33,6 +62,7 @@ export const learnerRoutes: Route[] = [
       const topicParam = url.searchParams.get("topic");
       const topic = topicParam && TOPICS.some((t) => t.code === topicParam) ? topicParam : null;
       const skip = url.searchParams.get("skip") === "1";
+      if (url.searchParams.get("mode") === "notebook") return serveNotebook(ctx, user.id, skip);
 
       // Re-serve the open question (page refresh shouldn't hand out a fresh one) unless the learner skips it.
       const pending = await one<{ item_id: string; topic: string; status: string }>(db,
@@ -98,7 +128,17 @@ export const learnerRoutes: Route[] = [
         await db.query(
           `INSERT INTO attempts (user_id, item_id, item_version, choice, is_correct, time_ms, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
           [user.id, it.id, p.version, b.choice, correct, timeMs, now.toISOString()]);
-        const res: AnswerResult = { correct, correctKey: it.correctKey, choice: b.choice, options: it.options, explanation: it.explanation, reference: it.reference };
+        await updateReviewCard(db, user.id, it.id, correct, now);
+        const cert = await one<{ reviewer: string | null; created_at: Date }>(db,
+          `SELECT u.display_name AS reviewer, r.created_at FROM item_reviews r LEFT JOIN users u ON u.id = r.reviewer_id
+            WHERE r.item_id = $1 AND r.version = $2 AND r.decision = 'approve' ORDER BY r.created_at DESC LIMIT 1`, [it.id, it.version]);
+        const note = await one<{ id: string; title: string }>(db,
+          `SELECT id, title FROM review_notes WHERE subtopic = $1 AND status = 'published' ORDER BY free_access DESC, id LIMIT 1`, [it.subtopic]);
+        const res: AnswerResult = {
+          correct, correctKey: it.correctKey, choice: b.choice, options: it.options, explanation: it.explanation, reference: it.reference,
+          reviewedBy: cert?.reviewer ?? null, reviewedAt: cert ? new Date(cert.created_at).toISOString() : null,
+          relatedNote: note ? { id: note.id, title: note.title } : null,
+        };
         return res;
       });
     },
@@ -109,6 +149,7 @@ export const learnerRoutes: Route[] = [
       const db = ctx.db;
       const s = await getThresholds(db);
       const latest = await latestAttempts(db, [user.id]);
+      const ent = await getEntitlements(db, user.id, ctx.now());
       const days = await db.query<{ created_at: Date }>(
         `SELECT created_at FROM attempts WHERE user_id = $1 AND created_at > $2::timestamptz - interval '400 days'`, [user.id, ctx.now().toISOString()]);
       const totals = await one<{ total: string; pool: string }>(db,
@@ -145,7 +186,10 @@ export const learnerRoutes: Route[] = [
       return {
         settings: s,
         mastery: masteryFrom(latest, s),
-        subtopics: subtopicMastery(latest),
+        // Detailed subtopic analysis is a Plus feature; topic-level mastery stays free.
+        subtopics: ent.features.includes("analytics.subtopic") ? subtopicMastery(latest) : null,
+        entitlements: ent,
+        notebook: await notebookCounts(db, user.id, ctx.now()),
         overall: overallPct(latest),
         answeredItems: latest.length,
         totalAttempts: Number(totals?.total ?? 0),
@@ -153,6 +197,21 @@ export const learnerRoutes: Route[] = [
         streak: streakDays(days.map((d) => new Date(d.created_at)), ctx.now()),
         notes: notes.map((n) => ({ id: String(n.id), body: n.body, author: n.author, at: new Date(n.created_at).toISOString() })),
         leaderboard,
+      };
+    },
+  },
+  {
+    method: "GET", path: "/api/learner/notebook", access: ["learner"],
+    async handler({ ctx, user }) {
+      const now = ctx.now();
+      const counts = await notebookCounts(ctx.db, user.id, now);
+      if (!(await hasFeature(ctx.db, user.id, "review.notebook", now))) return { locked: true, counts, cards: [] };
+      const cards = await ctx.db.query<{ item_id: string; topic: string; subtopic: string; lead_in: string; state: string; due_at: Date; lapses: number }>(
+        `SELECT c.item_id, i.topic, i.subtopic, i.lead_in, c.state, c.due_at, c.lapses FROM review_cards c JOIN items i ON i.id = c.item_id
+          WHERE c.user_id = $1 AND i.status <> 'retired' ORDER BY (c.state = 'mastered'), c.due_at LIMIT 300`, [user.id]);
+      return {
+        locked: false, counts,
+        cards: cards.map((c) => ({ itemId: c.item_id, topic: c.topic, subtopic: c.subtopic, leadIn: c.lead_in, state: c.state, dueAt: new Date(c.due_at).toISOString(), due: c.state !== "mastered" && new Date(c.due_at) <= now, lapses: c.lapses })),
       };
     },
   },

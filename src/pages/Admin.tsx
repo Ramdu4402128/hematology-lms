@@ -2,21 +2,23 @@ import { useEffect, useState } from "react";
 import { get, post, put, patch } from "../api";
 import { ROLES, ROLE_LABEL, TOPICS, type Role } from "../../shared/taxonomy";
 import type { Me } from "../../shared/types";
+import { MembershipAdmin, UserGrants } from "./AdminMembership";
 import { Field, Loading, Stat, Tabs, errText, useLoad, useToast, ago, fmtDate } from "../ui";
 
-type Tab = "overview" | "users" | "cohorts" | "assign" | "settings" | "audit";
-interface UserRow { id: string; email: string; displayName: string; active: boolean; pendingPassword: boolean; lastLoginAt: string | null; locked: boolean; roles: Role[]; cohorts: string[] }
+type Tab = "overview" | "users" | "membership" | "cohorts" | "assign" | "settings" | "audit";
+interface UserRow { id: string; email: string; displayName: string; active: boolean; pendingPassword: boolean; lastLoginAt: string | null; locked: boolean; roles: Role[]; cohorts: string[]; selfRegistered: boolean; plus: boolean; plusUntil: string | null }
 
 export function AdminApp({ me }: { me: Me }) {
   const [tab, setTab] = useState<Tab>("overview");
   return (
     <>
       <Tabs label="ส่วนของโรงเรียนแพทย์" value={tab} onChange={setTab} items={[
-        { id: "overview", label: "ภาพรวม" }, { id: "users", label: "ผู้ใช้" }, { id: "cohorts", label: "รุ่น" },
+        { id: "overview", label: "ภาพรวม" }, { id: "users", label: "ผู้ใช้" }, { id: "membership", label: "สมาชิกและสิทธิ์" }, { id: "cohorts", label: "รุ่น" },
         { id: "assign", label: "อาจารย์ผู้ดูแล" }, { id: "settings", label: "เกณฑ์และการตั้งค่า" }, { id: "audit", label: "บันทึกการใช้งาน" },
       ]} />
       {tab === "overview" && <Overview />}
       {tab === "users" && <Users me={me} />}
+      {tab === "membership" && <MembershipAdmin />}
       {tab === "cohorts" && <Cohorts />}
       {tab === "assign" && <Assignments />}
       {tab === "settings" && <SettingsForm />}
@@ -115,7 +117,7 @@ function Users({ me }: { me: Me }) {
             <thead><tr><th>ชื่อ</th><th>บทบาท</th><th>รุ่น</th><th>เข้าใช้ล่าสุด</th><th>สถานะ</th><th></th></tr></thead>
             <tbody>{users.map((u) => (
               <tr key={u.id} className={edit?.id === u.id ? "sel" : ""}>
-                <td>{u.displayName}<div className="small muted">{u.email}</div></td>
+                <td>{u.displayName}{u.plus && <span className="pill plus-pill" style={{ marginLeft: 6 }} title={u.plusUntil ? `ถึง ${fmtDate(u.plusUntil)}` : "ไม่มีวันหมดอายุ"}>Plus</span>}{u.selfRegistered && <span className="pill st-draft" style={{ marginLeft: 6 }}>สมัครเอง</span>}<div className="small muted">{u.email}</div></td>
                 <td className="small">{u.roles.map((r) => ROLE_LABEL[r]).join(", ")}</td>
                 <td className="small">{u.cohorts.join(", ") || "—"}</td>
                 <td className="small">{u.lastLoginAt ? ago(u.lastLoginAt) : "ยังไม่เคย"}</td>
@@ -134,6 +136,7 @@ function Users({ me }: { me: Me }) {
             <RolePicker value={edit.roles} onChange={(roles) => setEdit({ ...edit, roles })} />
             <label className="check"><input type="checkbox" checked={edit.active} disabled={edit.id === me.id} onChange={(e) => setEdit({ ...edit, active: e.target.checked })} /> เปิดใช้งานบัญชี</label>
             <div className="row"><button type="button" className="btn primary" disabled={!edit.roles.length} onClick={saveEdit}>บันทึก</button><button type="button" className="btn ghost" onClick={() => setEdit(null)}>ยกเลิก</button></div>
+            <UserGrants userId={edit.id} onChanged={list.reload} />
           </section>
         ) : (
           <section className="panel stack">
@@ -198,7 +201,13 @@ function Cohorts() {
                       onChange={(e) => { const m = { ...members }; if (e.target.checked) m[u.id] = ""; else delete m[u.id]; setMembers(m); }} />{u.displayName}</label>
                     {u.id in members && <input type="text" aria-label={`กลุ่มย่อยของ ${u.displayName}`} placeholder="เช่น MD ปี 5 / R2" style={{ maxWidth: 220 }} value={members[u.id]} onChange={(e) => setMembers({ ...members, [u.id]: e.target.value })} />}
                   </li>))}</ul>
-                <div><button type="button" className="btn primary" onClick={saveMembers}>บันทึกสมาชิก ({Object.keys(members).length})</button></div>
+                <div className="row"><button type="button" className="btn primary" onClick={saveMembers}>บันทึกสมาชิก ({Object.keys(members).length})</button>
+                  <button type="button" className="btn" onClick={async () => {
+                    const d = prompt("ให้สิทธิ์ Plus แก่ผู้เรียนทุกคนในรุ่นนี้กี่วัน?", "120");
+                    if (!d || !/^\d+$/.test(d)) return;
+                    try { const r = await post<{ granted: number }>(`/api/admin/cohorts/${sel}/grant`, { days: Number(d) }); toast(`ให้สิทธิ์ Plus ${d} วันแก่ ${r.granted} คนแล้ว`); }
+                    catch (e) { toast(errText(e)); }
+                  }}>ให้สิทธิ์ Plus ทั้งรุ่น</button></div>
               </>
             )}
           </div>

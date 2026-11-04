@@ -47,6 +47,10 @@ export interface AnswerResult {
   options: Option[];
   explanation: string;
   reference: string;
+  /** Faculty reviewer who approved this version — shown to learners as the content sign-off. */
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  relatedNote?: { id: string; title: string } | null;
 }
 
 export interface TopicMastery { code: string; n: number; c: number; pct: number | null; enough: boolean }

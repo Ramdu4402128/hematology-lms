@@ -2,34 +2,55 @@ import { useEffect, useState } from "react";
 import { get, post, patch } from "../api";
 import { TOPICS, REPORT_REASONS } from "../../shared/taxonomy";
 import type { AnswerResult, LearnerQuestion, Me, TopicMastery, Settings } from "../../shared/types";
-import { ItemPreview, ItemTags, LabsTable, Loading, MasteryBars, Tabs, errText, useLoad, useToast, topicName, subName, ago, fmtDate, Field } from "../ui";
+import { ItemPreview, ItemTags, LabsTable, Loading, MasteryBars, Tabs, errText, useLoad, useToast, topicName, subName, ago, fmtDate, Field, Disclaimer, PlusBadge } from "../ui";
+import type { Entitlements } from "../../shared/plans";
+import { NotesLibrary, Notebook, MembershipPanel, UpsellCard } from "./LearnerPlus";
 
 type MeX = Me & { leaderboardAlias: string | null };
 interface Summary {
-  settings: Settings; mastery: TopicMastery[]; subtopics: { code: string; n: number; c: number; pct: number }[]; overall: number | null;
+  settings: Settings; mastery: TopicMastery[]; subtopics: { code: string; n: number; c: number; pct: number }[] | null; overall: number | null;
+  entitlements: Entitlements; notebook: { toReview: number; recallCheck: number; mastered: number; due: number };
   answeredItems: number; totalAttempts: number; poolSize: number; streak: number;
   notes: { id: string; body: string; author: string | null; at: string }[];
   leaderboard: { optedIn: boolean; cohortName?: string | null; windowDays?: number; participants?: number; entries?: { rank: number; name: string; activeDays: number; answered: number; isMe: boolean }[] };
 }
 
+type LTab = "practice" | "notes" | "notebook" | "progress" | "history" | "account";
+
 export function LearnerApp({ me, setMe }: { me: MeX; setMe: (m: MeX) => void }) {
-  const [tab, setTab] = useState<"practice" | "progress" | "history" | "settings">("practice");
+  const [tab, setTab] = useState<LTab>("practice");
+  const [noteId, setNoteId] = useState<string | null>(null);
   const summary = useLoad<Summary>(() => get("/api/learner/summary"), []);
+  const plus = summary.data?.entitlements.plan === "plus";
+  const due = summary.data?.notebook.due ?? 0;
+  const openNote = (id: string) => { setNoteId(id); setTab("notes"); };
   return (
     <>
       <Tabs label="ส่วนของผู้เรียน" value={tab} onChange={setTab} items={[
-        { id: "practice", label: "ฝึกทำข้อสอบ" }, { id: "progress", label: "ความก้าวหน้า" },
-        { id: "history", label: "ทบทวนข้อที่ทำแล้ว" }, { id: "settings", label: "ตั้งค่า" },
+        { id: "practice", label: "ฝึกทำข้อสอบ" },
+        { id: "notes", label: "สรุปเนื้อหา" },
+        { id: "notebook", label: <>สมุดทบทวน{plus && due > 0 && <span className="count">{due}</span>}</> },
+        { id: "progress", label: "ความก้าวหน้า" },
+        { id: "history", label: "ข้อที่ทำแล้ว" },
+        { id: "account", label: <>สมาชิก {summary.data && <PlusBadge plus={plus} />}</> },
       ]} />
-      {tab === "practice" && <Practice summary={summary.data} onAnswered={summary.reload} />}
-      {tab === "progress" && (summary.data ? <Progress s={summary.data} /> : <Loading error={summary.error} />)}
+      {tab === "practice" && <Practice summary={summary.data} onAnswered={summary.reload} onOpenNote={openNote} />}
+      {tab === "notes" && <NotesLibrary openId={noteId} setOpenId={setNoteId} onUpgrade={() => setTab("account")} />}
+      {tab === "notebook" && <Notebook onUpgrade={() => setTab("account")} onChanged={summary.reload} renderPractice={(onDone) => <Practice summary={summary.data} onAnswered={() => { summary.reload(); onDone(); }} onOpenNote={openNote} mode="notebook" />} />}
+      {tab === "progress" && (summary.data ? <Progress s={summary.data} onUpgrade={() => setTab("account")} /> : <Loading error={summary.error} />)}
       {tab === "history" && <History />}
-      {tab === "settings" && <LearnerSettings me={me} setMe={(m) => { setMe(m); summary.reload(); }} />}
+      {tab === "account" && (
+        <div className="stack">
+          <MembershipPanel onChanged={summary.reload} />
+          <LearnerSettings me={me} setMe={(m) => { setMe(m); summary.reload(); }} />
+        </div>
+      )}
+      <Disclaimer />
     </>
   );
 }
 
-function Practice({ summary, onAnswered }: { summary: Summary | null; onAnswered: () => void }) {
+function Practice({ summary, onAnswered, onOpenNote, mode }: { summary: Summary | null; onAnswered: () => void; onOpenNote: (id: string) => void; mode?: "notebook" }) {
   const toast = useToast();
   const [topic, setTopic] = useState<string>(() => { try { return localStorage.getItem("hlms.topic") ?? "all"; } catch { return "all"; } });
   const [q, setQ] = useState<{ question: LearnerQuestion | null; mode: string; remainingNew?: number } | null>(null);
@@ -41,7 +62,8 @@ function Practice({ summary, onAnswered }: { summary: Summary | null; onAnswered
 
   async function load(skip = false, t = topic) {
     setBusy(true); setErr(null); setResult(null); setChoice(null); setReporting(false);
-    try { setQ(await get(`/api/learner/next?${new URLSearchParams({ ...(t !== "all" ? { topic: t } : {}), ...(skip ? { skip: "1" } : {}) })}`)); }
+    const params = mode === "notebook" ? { mode: "notebook", ...(skip ? { skip: "1" } : {}) } : { ...(t !== "all" ? { topic: t } : {}), ...(skip ? { skip: "1" } : {}) };
+    try { setQ(await get(`/api/learner/next?${new URLSearchParams(params)}`)); }
     catch (e) { setErr(errText(e)); } finally { setBusy(false); }
   }
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
@@ -63,19 +85,22 @@ function Practice({ summary, onAnswered }: { summary: Summary | null; onAnswered
   return (
     <div className="grid">
       <section className="panel stack" aria-labelledby="qh">
-        <div className="row" role="group" aria-label="เลือก Topic">
+        {mode !== "notebook" && <div className="row" role="group" aria-label="เลือก Topic">
           <button type="button" className="chip" aria-pressed={topic === "all"} onClick={() => pickTopic("all")}>ปรับตามจุดอ่อน</button>
           {TOPICS.map((t) => <button key={t.code} type="button" className="chip" aria-pressed={topic === t.code} onClick={() => pickTopic(t.code)} title={t.name}>{t.code}</button>)}
-        </div>
+        </div>}
         <h2 id="qh" className="sr-only">โจทย์</h2>
         {err ? <Loading error={err} /> : !q ? <Loading /> : !question ? (
-          <div className="empty">{topic === "all" ? "ยังไม่มีโจทย์ที่อนุมัติในคลัง" : `ยังไม่มีโจทย์ที่อนุมัติใน ${topic} ${topicName(topic)}`}</div>
+          <div className="empty">{mode === "notebook" ? "ทบทวนครบทุกข้อที่ถึงรอบแล้ว ข้อถัดไปจะกลับมาตามนัด" : topic === "all" ? "ยังไม่มีโจทย์ที่อนุมัติในคลัง" : `ยังไม่มีโจทย์ที่อนุมัติใน ${topic} ${topicName(topic)}`}</div>
         ) : result ? (
           <>
             <div className={`result ${result.correct ? "ok" : "no"}`} role="status">
               <strong>{result.correct ? "ถูกต้อง" : `ยังไม่ถูก — คำตอบที่ดีที่สุดคือ ${result.correctKey}`}</strong>
             </div>
             <ItemPreview item={{ ...question, options: result.options, correctKey: result.correctKey, explanation: result.explanation, reference: result.reference }} choice={result.choice} />
+            {result.reviewedBy && <p className="small muted" style={{ margin: 0 }}>ข้อนี้ผ่านการตรวจโดย {result.reviewedBy}{result.reviewedAt ? ` · ${fmtDate(result.reviewedAt)}` : ""}</p>}
+            {!result.correct && <p className="small muted" style={{ margin: 0 }}>บันทึกข้อนี้ลงสมุดทบทวนแล้ว จะวนกลับมาให้ทำอีกครั้งตามรอบ</p>}
+            {result.relatedNote && <div className="note row-between"><span className="small">ทบทวนเนื้อหา: <strong>{result.relatedNote.title}</strong></span><button type="button" className="btn small" onClick={() => onOpenNote(result.relatedNote!.id)}>อ่านสรุป</button></div>}
             <div className="row-between">
               <button type="button" className="btn ghost" onClick={() => setReporting(!reporting)}>แจ้งปัญหาข้อนี้</button>
               <button type="button" className="btn primary" onClick={() => load()} disabled={busy}>ข้อต่อไป</button>
@@ -86,7 +111,7 @@ function Practice({ summary, onAnswered }: { summary: Summary | null; onAnswered
           <>
             <div className="row-between">
               <ItemTags topic={question.topic} subtopic={question.subtopic} level={question.level} />
-              <span className="small muted">{q.mode === "review" ? "ทบทวนข้อที่เคยตอบผิด" : q.mode === "repeat" ? "ทำครบทุกข้อแล้ว — สุ่มทบทวน" : q.remainingNew != null ? `เหลือข้อใหม่ ${q.remainingNew} ข้อ` : ""}</span>
+              <span className="small muted">{q.mode === "notebook" ? "สมุดทบทวน: ข้อที่ถึงรอบ" : q.mode === "review" ? "ทบทวนข้อที่เคยตอบผิด" : q.mode === "repeat" ? "ทำครบทุกข้อแล้ว — สุ่มทบทวน" : q.remainingNew != null ? `เหลือข้อใหม่ ${q.remainingNew} ข้อ` : ""}</span>
             </div>
             <p className="vignette">{question.vignette}</p>
             <LabsTable labs={question.labs} />
@@ -157,8 +182,8 @@ function ReportForm({ itemId, onDone }: { itemId: string; onDone: () => void }) 
   );
 }
 
-function Progress({ s }: { s: Summary }) {
-  const weakSubs = [...s.subtopics].filter((x) => x.n >= 1).sort((a, b) => a.pct - b.pct).slice(0, 6);
+function Progress({ s, onUpgrade }: { s: Summary; onUpgrade: () => void }) {
+  const weakSubs = [...(s.subtopics ?? [])].filter((x) => x.n >= 1).sort((a, b) => a.pct - b.pct).slice(0, 6);
   const lb = s.leaderboard;
   return (
     <div className="grid">
@@ -168,8 +193,8 @@ function Progress({ s }: { s: Summary }) {
           <MasteryBars mastery={s.mastery} low={s.settings.lowMastery} />
         </section>
         <section className="panel stack">
-          <h2 style={{ fontSize: 16 }}>Subtopic ที่ควรทบทวน</h2>
-          {weakSubs.length ? (
+          <h2 style={{ fontSize: 16 }}>Subtopic ที่ควรทบทวน <PlusBadge plus /></h2>
+          {s.subtopics == null ? <UpsellCard text="ดูผลละเอียดราย subtopic ว่าควรอ่านเรื่องไหนก่อน" onUpgrade={onUpgrade} /> : weakSubs.length ? (
             <div className="tbl-wrap"><table className="tbl"><thead><tr><th>Subtopic</th><th>ถูก</th><th>ข้อ</th></tr></thead>
               <tbody>{weakSubs.map((x) => <tr key={x.code}><td>{subName(x.code)}</td><td className="mono">{x.pct}%</td><td className="mono">{x.n}</td></tr>)}</tbody></table></div>
           ) : <p className="muted small" style={{ margin: 0 }}>ยังไม่มีข้อมูล</p>}

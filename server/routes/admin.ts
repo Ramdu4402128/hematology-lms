@@ -78,17 +78,26 @@ export const adminRoutes: Route[] = [
   {
     method: "GET", path: "/api/admin/users", access: [...A],
     async handler({ ctx }) {
-      const rows = await ctx.db.query<{ id: string; email: string; display_name: string; active: boolean; must_change_password: boolean; last_login_at: Date | null; locked_until: Date | null; roles: string[]; cohorts: string[] }>(
+      const rows = await ctx.db.query<{ id: string; email: string; display_name: string; active: boolean; must_change_password: boolean; last_login_at: Date | null; locked_until: Date | null; roles: string[]; cohorts: string[]; self_registered: boolean; plus_grants: string; plus_open: boolean | null; plus_until: Date | null }>(
         `SELECT u.id, u.email, u.display_name, u.active, u.must_change_password, u.last_login_at, u.locked_until,
                 COALESCE((SELECT array_agg(role ORDER BY role) FROM user_roles WHERE user_id = u.id), '{}') AS roles,
-                COALESCE((SELECT array_agg(c.name ORDER BY c.name) FROM cohort_members m JOIN cohorts c ON c.id = m.cohort_id WHERE m.user_id = u.id AND NOT c.archived), '{}') AS cohorts
-           FROM users u ORDER BY u.active DESC, u.display_name`);
+                COALESCE((SELECT array_agg(c.name ORDER BY c.name) FROM cohort_members m JOIN cohorts c ON c.id = m.cohort_id WHERE m.user_id = u.id AND NOT c.archived), '{}') AS cohorts,
+                u.self_registered,
+                (SELECT count(*) FROM entitlement_grants g
+                  WHERE g.user_id = u.id AND g.revoked_at IS NULL AND g.starts_at <= $1 AND (g.ends_at IS NULL OR g.ends_at > $1)) AS plus_grants,
+                (SELECT bool_or(g.ends_at IS NULL) FROM entitlement_grants g
+                  WHERE g.user_id = u.id AND g.revoked_at IS NULL AND g.starts_at <= $1) AS plus_open,
+                (SELECT max(g.ends_at) FROM entitlement_grants g
+                  WHERE g.user_id = u.id AND g.revoked_at IS NULL AND g.ends_at > $1) AS plus_until
+           FROM users u ORDER BY u.active DESC, u.display_name`, [ctx.now().toISOString()]);
       const now = ctx.now();
       return {
         users: rows.map((u) => ({
           id: u.id, email: u.email, displayName: u.display_name, active: u.active, pendingPassword: u.must_change_password,
           lastLoginAt: u.last_login_at ? new Date(u.last_login_at).toISOString() : null,
           locked: !!u.locked_until && new Date(u.locked_until) > now, roles: u.roles, cohorts: u.cohorts,
+          selfRegistered: u.self_registered, plus: Number(u.plus_grants) > 0,
+          plusUntil: Number(u.plus_grants) > 0 && !u.plus_open && u.plus_until ? new Date(u.plus_until).toISOString() : null,
         })),
       };
     },

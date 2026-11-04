@@ -4,6 +4,7 @@ import { hashPassword, tempPassword } from "../auth";
 import { RUBRIC } from "../../shared/taxonomy";
 import type { Lab, Option } from "../../shared/types";
 import demoItems from "./demo-items.json";
+import { DEMO_NOTES } from "./demo-notes";
 
 interface DemoItem {
   id: string; topic: string; subtopic: string; level: string; vignette: string; labs: Lab[]; leadIn: string;
@@ -55,6 +56,7 @@ export async function seedDemo(db: Db, now: Date, emailDomain = "demo.example.or
   const author = await mkUser("faculty.author", "อ.นพ. ธนกร ว. (ผู้ออกข้อสอบ)", ["faculty"]);
   const reviewer = await mkUser("faculty.reviewer", "อ.พญ. วรรณา ศ. (ผู้รีวิว)", ["faculty"]);
   const advisor = await mkUser("advisor", "อ.พญ. สุภาวดี ก. (อาจารย์ผู้ดูแล)", ["advisor"]);
+  const certifier = await mkUser("content.reviewer", "ศ.นพ. ประเสริฐ ล. (ผู้รับรองเนื้อหา)", ["content_reviewer"]);
   const learnerIds: Record<string, string> = {};
   for (const [i, l] of LEARNERS.entries()) learnerIds[l.key] = await mkUser(`learner${i + 1}`, l.name, ["learner"]);
 
@@ -100,5 +102,15 @@ export async function seedDemo(db: Db, now: Date, emailDomain = "demo.example.or
     [learnerIds.l1, advisor, "อ่าน smear ได้เป็นระบบดี ควรทบทวนเกณฑ์วินิจฉัย acute leukemia ก่อน case conference วันศุกร์", new Date(now.getTime() - 5 * DAY).toISOString()]);
   await db.query(`INSERT INTO feedback_notes (learner_id, author_id, visibility, body, created_at) VALUES ($1,$2,'staff',$3,$4)`,
     [learnerIds.l1, advisor, "บันทึกภายในทีม: นัดพบรายบุคคลสัปดาห์หน้า", new Date(now.getTime() - 4 * DAY).toISOString()]);
+  for (const [i, n] of DEMO_NOTES.entries()) {
+    const at = new Date(now.getTime() - (10 - i) * DAY).toISOString();
+    await db.query(
+      `INSERT INTO review_notes (id, topic, subtopic, title, summary, body, refs, free_access, status, author_id, last_edited_by, certified_by, certified_at, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'published',$9,$9,$10,$11,$11,$11)`,
+      [`NOTE-${String(i + 1).padStart(4, "0")}`, n.topic, n.subtopic, n.title, n.summary, n.body, n.refs, n.freeAccess, author, certifier, at]);
+    await db.query(`INSERT INTO note_reviews (note_id, version, reviewer_id, decision, comment, created_at) VALUES ($1,1,$2,'certify','',$3)`,
+      [`NOTE-${String(i + 1).padStart(4, "0")}`, certifier, at]);
+  }
+  await db.query(`SELECT setval('note_number_seq', $1)`, [DEMO_NOTES.length]);
   return accounts;
 }

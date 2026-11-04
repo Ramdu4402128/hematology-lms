@@ -2,14 +2,15 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, get, post, onAuthProblem } from "./api";
 import { ROLE_LABEL, type Role } from "../shared/taxonomy";
 import type { Me } from "../shared/types";
-import { errText, Field, Loading } from "./ui";
+import { errText, Field, Loading, usePublicConfig, loadConfig } from "./ui";
+import { CertifierApp } from "./pages/Certifier";
 import { LearnerApp } from "./pages/Learner";
 import { FacultyApp } from "./pages/Faculty";
 import { AdvisorApp } from "./pages/Advisor";
 import { AdminApp } from "./pages/Admin";
 
 type MeX = Me & { leaderboardAlias: string | null };
-const ROLE_ORDER: Role[] = ["learner", "faculty", "advisor", "school_admin"];
+const ROLE_ORDER: Role[] = ["learner", "faculty", "content_reviewer", "advisor", "school_admin"];
 
 function Brand() {
   return (
@@ -38,7 +39,7 @@ export function App() {
   if (me === undefined) return <main className="wrap"><Loading /></main>;
   if (!me) {
     if (setup?.needsSetup) return <SetupScreen onDone={() => setSetup({ needsSetup: false, setupEnabled: true })} enabled={setup.setupEnabled} />;
-    return <LoginScreen onLogin={setMe} />;
+    return <PublicScreens onLogin={setMe} />;
   }
   if (me.mustChangePassword) return <PasswordScreen me={me} onDone={setMe} forced />;
   return <Shell me={me} setMe={setMe} />;
@@ -56,7 +57,64 @@ function Centered({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
-function LoginScreen({ onLogin }: { onLogin: (m: MeX) => void }) {
+function PublicScreens({ onLogin }: { onLogin: (m: MeX) => void }) {
+  const [mode, setMode] = useState<"login" | "register">(() => (location.hash === "#register" ? "register" : "login"));
+  const go = (m: "login" | "register") => { setMode(m); history.replaceState(null, "", m === "register" ? "#register" : location.pathname); };
+  return mode === "register" ? <RegisterScreen onLogin={onLogin} onLoginInstead={() => go("login")} /> : <LoginScreen onLogin={onLogin} onRegister={() => go("register")} />;
+}
+
+function RegisterScreen({ onLogin, onLoginInstead }: { onLogin: (m: MeX) => void; onLoginInstead: () => void }) {
+  const cfg = usePublicConfig();
+  const [f, setF] = useState({ displayName: "", email: "", password: "", confirm: "", learnerLevel: "", institutionName: "", studyGoal: "", acceptTerms: false, marketingOptIn: false });
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setF({ ...f, [k]: e.target instanceof HTMLInputElement && e.target.type === "checkbox" ? e.target.checked : e.target.value });
+  if (!cfg) return <main className="wrap"><Loading /></main>;
+  if (!cfg.registrationOpen) return <Centered title="ยังไม่เปิดรับสมัคร"><p style={{ margin: 0 }}>ขณะนี้ระบบเปิดใช้งานเฉพาะบัญชีที่สถาบันสร้างให้</p><button className="btn" onClick={onLoginInstead}>ไปหน้าเข้าสู่ระบบ</button></Centered>;
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (f.password !== f.confirm) { setErr("รหัสผ่านทั้งสองช่องไม่ตรงกัน"); return; }
+    setBusy(true); setErr(null);
+    try {
+      const r = await post<{ me: MeX }>("/api/auth/register", {
+        email: f.email, displayName: f.displayName, password: f.password, learnerLevel: f.learnerLevel, institutionName: f.institutionName,
+        studyGoal: f.studyGoal, acceptTerms: f.acceptTerms, termsVersion: cfg!.disclaimer.version, marketingOptIn: f.marketingOptIn,
+      });
+      onLogin(r.me);
+    } catch (x) {
+      setErr(errText(x));
+      if ((x as { code?: string }).code === "terms_changed") loadConfig(true);
+    } finally { setBusy(false); }
+  }
+  return (
+    <Centered title="สมัครสมาชิก">
+      <p className="small" style={{ margin: 0 }}>ฝึกข้อสอบโลหิตวิทยาได้ฟรีไม่จำกัด{cfg.trialDays > 0 ? ` และทดลองใช้ Plus (สรุปเนื้อหา + สมุดทบทวน) ${cfg.trialDays} วัน` : ""}</p>
+      <form className="stack" onSubmit={submit}>
+        <Field label="ชื่อที่แสดง"><input type="text" required minLength={2} value={f.displayName} onChange={set("displayName")} placeholder="เช่น นพ. สมชาย ก." /></Field>
+        <Field label="อีเมล"><input type="email" required autoComplete="username" value={f.email} onChange={set("email")} /></Field>
+        <div className="two">
+          <Field label="รหัสผ่าน" hint="อย่างน้อย 10 ตัวอักษร"><input type="password" required minLength={10} autoComplete="new-password" value={f.password} onChange={set("password")} /></Field>
+          <Field label="ยืนยันรหัสผ่าน"><input type="password" required minLength={10} autoComplete="new-password" value={f.confirm} onChange={set("confirm")} /></Field>
+        </div>
+        <div className="two">
+          <Field label="สถานะ"><select required value={f.learnerLevel} onChange={set("learnerLevel")}><option value="">— เลือก —</option>{cfg.learnerLevels.map((l) => <option key={l}>{l}</option>)}</select></Field>
+          <Field label="เป้าหมาย"><select required value={f.studyGoal} onChange={set("studyGoal")}><option value="">— เลือก —</option>{cfg.studyGoals.map((l) => <option key={l}>{l}</option>)}</select></Field>
+        </div>
+        <Field label="สถาบัน / โรงพยาบาล (ไม่บังคับ)"><input type="text" value={f.institutionName} onChange={set("institutionName")} /></Field>
+        <div className="note small" style={{ maxHeight: 160, overflow: "auto" }}><strong>ข้อจำกัดความรับผิดชอบและเงื่อนไขการใช้งาน</strong><p style={{ margin: "4px 0 0" }}>{cfg.disclaimer.text}</p></div>
+        <label className="check"><input type="checkbox" required checked={f.acceptTerms} onChange={set("acceptTerms")} /> ข้าพเจ้าได้อ่านและยอมรับข้อจำกัดความรับผิดชอบและเงื่อนไขการใช้งาน</label>
+        <label className="check"><input type="checkbox" checked={f.marketingOptIn} onChange={set("marketingOptIn")} /> รับข่าวสารเนื้อหาใหม่และกิจกรรมทางอีเมล (ไม่บังคับ)</label>
+        {err && <p className="error" role="alert">{err}</p>}
+        <button className="btn primary" disabled={busy}>{busy ? "กำลังสมัคร…" : "สมัครสมาชิก"}</button>
+        <p className="small" style={{ margin: 0 }}>มีบัญชีแล้ว? <button type="button" className="btn ghost small" onClick={onLoginInstead}>เข้าสู่ระบบ</button></p>
+      </form>
+    </Centered>
+  );
+}
+
+function LoginScreen({ onLogin, onRegister }: { onLogin: (m: MeX) => void; onRegister: () => void }) {
+  const cfg = usePublicConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -75,7 +133,8 @@ function LoginScreen({ onLogin }: { onLogin: (m: MeX) => void }) {
         <Field label="รหัสผ่าน"><input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn primary" disabled={busy}>{busy ? "กำลังตรวจสอบ…" : "เข้าสู่ระบบ"}</button>
-        <p className="small muted" style={{ margin: 0 }}>ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบของโรงเรียนแพทย์เพื่อออกรหัสชั่วคราวใหม่</p>
+        {cfg?.registrationOpen && <p className="small" style={{ margin: 0 }}>ยังไม่มีบัญชี? <button type="button" className="btn ghost small" onClick={onRegister}>สมัครสมาชิก — ฝึกข้อสอบฟรี</button></p>}
+        <p className="small muted" style={{ margin: 0 }}>ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบเพื่อออกรหัสชั่วคราวใหม่</p>
       </form>
     </Centered>
   );
@@ -184,6 +243,7 @@ function Shell({ me, setMe }: { me: MeX; setMe: (m: MeX | null) => void }) {
         {pw ? <PasswordScreen me={me} onDone={(m) => { setMe(m); setPw(false); }} onCancel={() => setPw(false)} />
           : role === "learner" ? <LearnerApp me={me} setMe={setMe} />
           : role === "faculty" ? <FacultyApp me={me} />
+          : role === "content_reviewer" ? <CertifierApp />
           : role === "advisor" ? <AdvisorApp />
           : role === "school_admin" ? <AdminApp me={me} />
           : <div className="empty">บัญชีนี้ยังไม่มีบทบาท กรุณาติดต่อผู้ดูแลระบบ</div>}
