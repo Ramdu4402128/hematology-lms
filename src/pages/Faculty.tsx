@@ -42,41 +42,55 @@ function Bank({ me, selected, setSelected, onEdit }: { me: Me; selected: string 
   const [topic, setTopic] = useState("");
   const [q, setQ] = useState("");
   const [origin, setOrigin] = useState<"" | "faculty" | "sample_bank">("");
+  const [page, setPage] = useState(0);
   const list = useLoad<{ items: Row[]; counts: Record<string, number> }>(
     () => get(`/api/faculty/items?${new URLSearchParams({ ...(status && { status }), ...(topic && { topic }), ...(q && { q }) })}`), [status, topic, q]);
+  const PAGE = 25;
+  const rows = (list.data?.items ?? []).filter((r) => !origin || (r.origin ?? "faculty") === origin);
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+  const cur = Math.min(page, pages - 1);
+  const shown = rows.slice(cur * PAGE, cur * PAGE + PAGE);
+  const filter = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(0); };
   return (
-    <div className="grid" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1.1fr)" }}>
+    <div className="grid" style={{ gridTemplateColumns: "minmax(0,1.15fr) minmax(0,1fr)" }}>
       <section className="panel stack">
-        <div className="toolbar">
-          <select aria-label="สถานะ" value={status} onChange={(e) => setStatus(e.target.value)}>
+        <div className="filters">
+          <select aria-label="สถานะ" value={status} onChange={(e) => filter(setStatus)(e.target.value)}>
             <option value="">ทุกสถานะ</option>
             {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}{list.data?.counts[k] != null ? ` (${list.data.counts[k]})` : ""}</option>)}
           </select>
-          <select aria-label="Topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
+          <select aria-label="Topic" value={topic} onChange={(e) => filter(setTopic)(e.target.value)}>
             <option value="">ทุก Topic</option>
             {TOPICS.map((t) => <option key={t.code} value={t.code}>{t.code} {t.name}</option>)}
           </select>
-          <select aria-label="ที่มา" value={origin} onChange={(e) => setOrigin(e.target.value as typeof origin)}>
+          <select aria-label="ที่มา" value={origin} onChange={(e) => filter(setOrigin)(e.target.value as typeof origin)}>
             <option value="">ทุกที่มา</option><option value="faculty">อาจารย์เขียน</option><option value="sample_bank">คลังโจทย์ตัวอย่าง (ร่างอัตโนมัติ)</option>
           </select>
-          <input type="search" aria-label="ค้นหา" placeholder="ค้นหารหัสหรือข้อความ" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input type="search" aria-label="ค้นหา" placeholder="ค้นหารหัสหรือข้อความ" value={q} onChange={(e) => filter(setQ)(e.target.value)} />
         </div>
-        {!list.data ? <Loading error={list.error} /> : !list.data.items.length ? <div className="empty">ไม่พบข้อสอบ</div> : (
+        {!list.data ? <Loading error={list.error} /> : !rows.length ? <div className="empty">ไม่พบข้อสอบ</div> : (<>
           <div className="tbl-wrap"><table className="tbl">
-            <thead><tr><th>รหัส</th><th>Topic</th><th>คำถาม</th><th>สถานะ</th><th title="สัดส่วนตอบถูก (เวอร์ชันปัจจุบัน)">p</th></tr></thead>
-            <tbody>{list.data.items.filter((r) => !origin || (r.origin ?? "faculty") === origin).map((r) => (
-              <tr key={r.id} className={selected === r.id ? "sel" : ""}>
-                <td><button type="button" className="linkbtn mono" onClick={() => setSelected(r.id)}>{r.id}</button>{r.version > 1 && <span className="small muted"> v{r.version}</span>}
-                  <div className="row" style={{ gap: 4 }}>{r.origin === "sample_bank" && <span className="pill origin-pill" title="ร่างอัตโนมัติ ต้องตรวจโดยอาจารย์">ตัวอย่าง</span>}{r.hasEn && <span className="pill st-draft" title="มีฉบับภาษาอังกฤษ">EN</span>}</div></td>
+            <thead><tr><th>รหัส</th><th>Topic</th><th>คำถาม</th><th>สถานะ</th><th className="num" title="สัดส่วนตอบถูก (เวอร์ชันปัจจุบัน) และจำนวนคำตอบ">p (n)</th></tr></thead>
+            <tbody>{shown.map((r) => (
+              <tr key={r.id} className={`clickable${selected === r.id ? " sel" : ""}`} onClick={() => setSelected(r.id)}>
+                <td><button type="button" className="linkbtn mono" onClick={() => setSelected(r.id)}>{r.id}</button>{r.version > 1 && <span className="small muted"> v{r.version}</span>}</td>
                 <td><span className="code">{r.topic}</span></td>
-                <td className="small">{r.leadIn || <span className="muted">(ยังไม่มี lead-in)</span>}{r.openReports > 0 && <span className="flag" style={{ marginLeft: 6 }}>รายงาน {r.openReports}</span>}</td>
+                <td className="small">{r.leadIn || <span className="muted">(ยังไม่มี lead-in)</span>}{r.origin === "sample_bank" && <span className="pill origin-pill tag-inline" title="ร่างอัตโนมัติ ต้องตรวจโดยอาจารย์">ตัวอย่าง</span>}{r.hasEn && <span className="pill st-draft tag-inline" title="มีฉบับภาษาอังกฤษ">EN</span>}{r.openReports > 0 && <span className="flag" style={{ marginLeft: 6 }}>รายงาน {r.openReports}</span>}</td>
                 <td><StatusPill status={r.status} /></td>
-                <td className="mono small">{r.p == null ? "—" : r.p.toFixed(2)}<span className="muted"> ({r.n})</span></td>
+                <td className="mono small num nowrap">{r.p == null ? "—" : r.p.toFixed(2)}<span className="muted"> ({r.n})</span></td>
               </tr>))}</tbody>
           </table></div>
-        )}
+          <div className="pager">
+            <span>แสดง {cur * PAGE + 1}–{cur * PAGE + shown.length} จาก {rows.length} ข้อ</span>
+            {pages > 1 && <div className="row">
+              <button type="button" className="btn small" disabled={cur === 0} onClick={() => setPage(cur - 1)}>ก่อนหน้า</button>
+              <span className="mono">{cur + 1} / {pages}</span>
+              <button type="button" className="btn small" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>ถัดไป</button>
+            </div>}
+          </div>
+        </>)}
       </section>
-      <section className="panel stack">
+      <section className="panel stack sticky-panel">
         {selected ? <ItemDetail key={selected} id={selected} me={me} onEdit={onEdit} onChanged={list.reload} onDeleted={() => { setSelected(null); list.reload(); }} />
           : <p className="muted small" style={{ margin: 0 }}>เลือกข้อสอบเพื่อดูรายละเอียด สถิติ และประวัติการรีวิว</p>}
       </section>
@@ -326,7 +340,7 @@ function ReviewQueue({ onDone }: { onDone: () => void }) {
             </li>))}</ul>
         )}
       </section>
-      <section className="panel stack">
+      <section className="panel stack sticky-panel">
         {!sel ? <p className="muted small" style={{ margin: 0 }}>เลือกข้อทางซ้ายเพื่อรีวิว</p> : !d.data ? <Loading error={d.error} /> : (
           <>
             <ItemPreview item={d.data.item} />

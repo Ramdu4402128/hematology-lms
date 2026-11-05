@@ -58,3 +58,19 @@ input[type=email],input[type=password],input[type=number],input[type=date],input
 .lang-switch button{min-height:30px;padding:0 10px;font-size:13px}
 .origin-pill{background:var(--info-soft);color:var(--info)}
 .note-card strong,.auth-card h1{font-family:var(--serif)}
+/* Lecture Hall refinements for dense work pages (DESIGN.md §6) */
+.tbl th.num,.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td.nowrap{white-space:nowrap}
+.tbl tr.clickable{cursor:pointer}
+.tbl tr.clickable:hover td{background:var(--sunk)}
+.tbl tr.sel:hover td{background:var(--accent-soft)}
+.tbl-wrap:has(> table.tbl){border-top:2px solid var(--fg-2);border-bottom:2px solid var(--fg-2)}
+.tbl tbody tr:last-child td{border-bottom:0}
+@media (min-width:901px){.sticky-panel{position:sticky;top:72px;max-height:calc(100dvh - 88px);overflow:auto}}
+.filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.filters select,.filters input{width:100%;min-width:0}
+@media (max-width:520px){.filters{grid-template-columns:minmax(0,1fr)}}
+.pager{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--fg-3)}
+.pager .row{gap:6px}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px;align-items:start}
+.tag-inline{margin-left:6px;font-size:11px;vertical-align:1px}

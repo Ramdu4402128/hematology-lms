@@ -21,7 +21,7 @@ export function AdminApp({ me }: { me: Me }) {
       {tab === "membership" && <MembershipAdmin />}
       {tab === "cohorts" && <Cohorts />}
       {tab === "assign" && <Assignments />}
-      {tab === "settings" && <div className="stack"><SettingsForm /><SampleBankPanel /></div>}
+      {tab === "settings" && <div className="settings-grid"><SettingsForm /><SampleBankPanel /></div>}
       {tab === "audit" && <Audit />}
     </>
   );
@@ -45,10 +45,10 @@ function Overview() {
         <div><h2 style={{ fontSize: 16 }}>ค่ากลาง Mastery รายรุ่น</h2><p className="small muted" style={{ margin: "2px 0 0" }}>ข้อมูลรวมระดับรุ่นเท่านั้น ไม่แสดงรายบุคคล</p></div>
         {!x.cohorts.length ? <div className="empty">ยังไม่มีรุ่นที่ใช้งานอยู่</div> : (
           <div className="tbl-wrap"><table className="tbl">
-            <thead><tr><th>รุ่น</th><th>สมาชิก</th>{TOPICS.map((t) => <th key={t.code} title={t.name}>{t.code}</th>)}</tr></thead>
+            <thead><tr><th>รุ่น</th><th className="num">สมาชิก</th>{TOPICS.map((t) => <th key={t.code} className="num" title={t.name}>{t.code}</th>)}</tr></thead>
             <tbody>{x.cohorts.map((c: any) => (
-              <tr key={c.id}><td>{c.name}<div className="small muted">{c.program}</div></td><td className="mono">{c.members}</td>
-                {TOPICS.map((t) => <td key={t.code} className="mono small">{c.median[t.code] == null ? "—" : `${c.median[t.code]}%`}</td>)}</tr>))}</tbody>
+              <tr key={c.id}><td>{c.name}<div className="small muted">{c.program}</div></td><td className="mono num">{c.members}</td>
+                {TOPICS.map((t) => <td key={t.code} className="mono small num">{c.median[t.code] == null ? "—" : `${c.median[t.code]}%`}</td>)}</tr>))}</tbody>
           </table></div>
         )}
       </section>

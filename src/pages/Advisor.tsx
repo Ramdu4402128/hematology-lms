@@ -23,16 +23,16 @@ export function AdvisorApp() {
         </div>
         {!learners.length ? <div className="empty">ยังไม่มีผู้เรียนที่มอบหมายให้คุณ — ติดต่อผู้ดูแลระบบของโรงเรียนแพทย์</div> : (
           <div className="tbl-wrap"><table className="tbl">
-            <thead><tr><th>ผู้เรียน</th>{TOPICS.map((t) => <th key={t.code} title={t.name}>{t.code}</th>)}<th>รวม</th><th>ข้อ</th><th>ล่าสุด</th><th>ธง</th></tr></thead>
+            <thead><tr><th>ผู้เรียน</th>{TOPICS.map((t) => <th key={t.code} className="num" title={t.name}>{t.code}</th>)}<th className="num">รวม</th><th className="num">ข้อ</th><th>ล่าสุด</th><th>ธง</th></tr></thead>
             <tbody>{shown.map((l) => (
-              <tr key={l.id} className={sel === l.id ? "sel" : ""}>
+              <tr key={l.id} className={`clickable${sel === l.id ? " sel" : ""}`} onClick={() => setSel(l.id)}>
                 <td><button type="button" className="linkbtn" onClick={() => setSel(l.id)}>{l.name}</button><div className="small muted">{l.track}</div></td>
                 {l.mastery.map((m) => {
                   const low = m.enough && m.pct != null && m.pct < settings.lowMastery;
-                  return <td key={m.code} className="mono small" style={low ? { color: "var(--bad)", fontWeight: 600 } : undefined}>{m.enough ? `${m.pct}%` : <span className="muted">{m.n ? `(${m.n})` : "—"}</span>}</td>;
+                  return <td key={m.code} className="mono small num" style={low ? { color: "var(--bad)", fontWeight: 600 } : undefined}>{m.enough ? `${m.pct}%` : <span className="muted">{m.n ? `(${m.n})` : "—"}</span>}</td>;
                 })}
-                <td className="mono small">{l.overall == null ? "—" : `${l.overall}%`}</td>
-                <td className="mono small">{l.answered}</td>
+                <td className="mono small num">{l.overall == null ? "—" : `${l.overall}%`}</td>
+                <td className="mono small num">{l.answered}</td>
                 <td className="small">{ago(l.lastActive)}</td>
                 <td>{l.flags.map((f) => <span key={f} className="flag">{f}</span>)}</td>
               </tr>))}</tbody>
