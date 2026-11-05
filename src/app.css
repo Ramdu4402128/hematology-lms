@@ -1,6 +1,6 @@
 /* Additions on top of the prototype stylesheet (styles.css) */
 body{margin:0;min-height:100dvh}
-input[type=email],input[type=password],input[type=number],input[type=date],input[type=search]{background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;min-height:40px;padding:6px 10px;width:100%}
+input[type=email],input[type=password],input[type=number],input[type=date],input[type=search]{background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;min-height:40px;padding:6px 10px;width:100%}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .auth-card{width:100%;max-width:440px}
 .auth-card:has(table){max-width:760px}
@@ -13,8 +13,8 @@ input[type=email],input[type=password],input[type=number],input[type=date],input
 .mbar{position:relative}
 .mbar .median{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);opacity:.55}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
-.stat-v{font-size:26px;font-weight:600;line-height:1.2;margin-top:2px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat-v{font-size:28px;font-weight:600;line-height:1.2;margin-top:2px;font-family:var(--serif)}
 .dist{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:13px}
 .dist .bar{height:10px;border-radius:999px;background:var(--sunk);overflow:hidden}
 .dist .bar span{display:block;height:100%;background:var(--fg-3)}
@@ -36,11 +36,12 @@ input[type=email],input[type=password],input[type=number],input[type=date],input
 .spark span{flex:1;background:var(--fg-3);border-radius:2px 2px 0 0;min-height:2px}
 .row-between{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
 .linkbtn.mono{white-space:nowrap}
-.disclaimer{margin-top:24px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:12.5px;color:var(--fg-3);line-height:1.6}
+.disclaimer{margin-top:24px;padding:12px 14px;border-top:1px solid var(--line-strong);border-radius:0;background:var(--surface);font-size:12.5px;color:var(--fg-3);line-height:1.6}
 .plus-pill{background:var(--accent);color:var(--on-accent);font-weight:600}
 .locked{position:relative}
-.upsell{border:1px dashed var(--accent);background:var(--accent-soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
-.md h2{font-size:18px;margin:18px 0 8px}
+.upsell{border:1px dashed var(--accent);background:var(--accent-soft);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.md{font-size:16px;line-height:1.75;max-width:72ch}
+.md h2{font-size:20px;margin:22px 0 8px}
 .md h3{font-size:16px;margin:16px 0 6px}
 .md h4{font-size:15px;margin:14px 0 6px}
 .md p,.md ul,.md ol{margin:0 0 10px}
@@ -49,9 +50,11 @@ input[type=email],input[type=password],input[type=number],input[type=date],input
 .md code{font-family:var(--mono);font-size:13px;background:var(--sunk);padding:0 4px;border-radius:4px}
 .md .tbl-wrap{margin:8px 0 12px}
 .md-table td,.md-table th{white-space:normal}
-.note-card{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;padding:14px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface)}
+.md .tbl-wrap{border-top:2px solid var(--fg-2);border-bottom:2px solid var(--fg-2)}
+.note-card{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;padding:14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface)}
 .note-card:hover{border-color:var(--fg-3)}
 .cert{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--good-soft);color:var(--good)}
 .codes{font-family:var(--mono);font-size:13px;white-space:pre;background:var(--sunk);border-radius:8px;padding:10px;max-height:240px;overflow:auto}
 .lang-switch button{min-height:30px;padding:0 10px;font-size:13px}
 .origin-pill{background:var(--info-soft);color:var(--info)}
+.note-card strong,.auth-card h1{font-family:var(--serif)}
