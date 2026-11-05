@@ -21,7 +21,7 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const DIST = join(ROOT, "dist");
 const SESSION_SECRET = process.env.SESSION_SECRET ?? randomBytes(32).toString("hex");
 const SETUP_TOKEN = process.env.SETUP_TOKEN ?? "local-setup";
-const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json", ".ico": "image/x-icon" };
+const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json", ".ico": "image/x-icon", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 
 const { db } = await openPGlite(process.env.LOCAL_DB === "memory" ? undefined : join(ROOT, ".local-db"));
 const ctx = { db, env: { SESSION_SECRET, SETUP_TOKEN }, now: () => new Date() };
