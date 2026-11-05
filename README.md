@@ -1,4 +1,4 @@
-# Hematology LMS
+# Blood Book (Hematology LMS)
 
 ระบบฝึกทำข้อสอบโลหิตวิทยาแบบ full-stack สำหรับโรงเรียนแพทย์ — React + Netlify Functions + Netlify Database (Postgres)
 

@@ -16,7 +16,7 @@ function Brand() {
   return (
     <div className="brand">
       <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3c4 5.5 7.5 9.6 7.5 13.7A7.5 7.5 0 0 1 6.5 16.7C6.5 12.6 10 8.5 14 3z" fill="var(--accent)" /></svg>
-      Hematology LMS
+      Blood Book
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# Hematology LMS
+# Blood Book (Hematology LMS)
 
 - อ่าน `DESIGN.md` ก่อนแก้ UI ใด ๆ และยึด tokens/ข้อห้ามในนั้น
 - Netlify Functions + Netlify Database; migration ใน `netlify/database/migrations` ห้ามแก้ไฟล์ที่ deploy แล้ว ให้เพิ่มไฟล์ใหม่

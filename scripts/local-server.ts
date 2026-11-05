@@ -54,6 +54,6 @@ createServer(async (req, res) => {
     res.end("error");
   }
 }).listen(PORT, () => {
-  console.log(`Hematology LMS (local) → http://localhost:${PORT}`);
+  console.log(`Blood Book (local) → http://localhost:${PORT}`);
   console.log(`First run: open the page and use setup token "${SETUP_TOKEN}"`);
 });
